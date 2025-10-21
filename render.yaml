@@ -3,7 +3,7 @@ services:
     name: paeshift-backend
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
+    buildCommand: bash build.sh
     startCommand: gunicorn payshift.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
     envVars:
       - key: PYTHON_VERSION
