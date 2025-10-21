@@ -1,0 +1,179 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Create Export Configuration - Payshift God Mode{% endblock %}
+
+{% block extra_css %}
+<style>
+    .field-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .field-item {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .field-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Create Export Configuration</h1>
+    <div>
+        <a href="{% url 'godmode:data_exports' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Exports
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Export Configuration Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'godmode:create_export_config' %}">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Configuration Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="model_name" class="form-label">Model <span class="text-danger">*</span></label>
+                                <select class="form-select" id="model_name" name="model_name" required>
+                                    <option value="">Select Model</option>
+                                    {% for model in available_models %}
+                                    <option value="{{ model.name }}">
+                                        {{ model.verbose_name }} ({{ model.name }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Fields <span class="text-danger">*</span></label>
+                        <p class="text-muted">Select the fields to include in the export.</p>
+                        
+                        <div id="fieldsContainer" class="field-list border rounded p-3">
+                            <div class="text-center py-4">
+                                <p class="text-muted">Please select a model to see available fields.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modelSelect = document.getElementById('model_name');
+        const fieldsContainer = document.getElementById('fieldsContainer');
+        
+        // Model data from Django
+        const modelData = {{ available_models|safe }};
+        
+        // Update fields when model changes
+        modelSelect.addEventListener('change', function() {
+            const selectedModel = this.value;
+            
+            if (!selectedModel) {
+                fieldsContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-muted">Please select a model to see available fields.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Find the selected model data
+            const model = modelData.find(m => m.name === selectedModel);
+            
+            if (!model) {
+                fieldsContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-danger">Error: Model data not found.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Generate field checkboxes
+            let fieldsHtml = `
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                        <label class="form-check-label" for="selectAll">
+                            <strong>Select All Fields</strong>
+                        </label>
+                    </div>
+                </div>
+                <hr>
+            `;
+            
+            model.fields.forEach(field => {
+                fieldsHtml += `
+                    <div class="field-item">
+                        <div class="form-check">
+                            <input class="form-check-input field-checkbox" type="checkbox" name="fields" value="${field.name}" id="field_${field.name}">
+                            <label class="form-check-label" for="field_${field.name}">
+                                ${field.verbose_name || field.name}
+                                <small class="text-muted">(${field.name})</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            fieldsContainer.innerHTML = fieldsHtml;
+            
+            // Add select all functionality
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const fieldCheckboxes = document.querySelectorAll('.field-checkbox');
+            
+            selectAllCheckbox.addEventListener('change', function() {
+                fieldCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+            
+            // Update select all when individual checkboxes change
+            fieldCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const allChecked = Array.from(fieldCheckboxes).every(cb => cb.checked);
+                    const anyChecked = Array.from(fieldCheckboxes).some(cb => cb.checked);
+                    
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

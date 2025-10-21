@@ -1,0 +1,304 @@
+{% extends 'index.html' %} {%load static%} {% block body %}
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<style>
+    .integrations {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .integration {
+        height: 80px;
+        width: 230px;
+        padding: 14px;
+        margin: 14px;
+        cursor: pointer;
+    }
+
+    .comming-soon {
+        position: absolute;
+        bottom: 0px;
+        right: 2px;
+    }
+</style>
+
+                <div class="container mt-4">
+                    <button class="btn btn-primary mt-4 add-integration">Add Integration</button>
+                    <button class="btn btn-primary mt-4 view-client" style="display: none">View Client</button>
+                    <div class="integrations card mt-4 p-4"></div>
+                </div>
+           
+
+<script>
+    const integrations = [
+        {
+            name: "Google Analytics",
+            img: "ga.svg",
+            comming_soon: false
+        },
+        {
+            name: "Facebook",
+            img: "fb.svg",
+            comming_soon: true
+        },
+        {
+            name: "Facebbok Ads",
+            img: "fb-ads.svg",
+            comming_soon: true
+        },
+        {
+            name: "Google Ads",
+            img: "gadw.svg",
+            comming_soon: true
+        },
+        {
+            name: "Instagram",
+            img: "inst.svg",
+            comming_soon: true
+        },
+        {
+            name: "Instagram Ads",
+            img: "inst-ads.svg",
+            comming_soon: true
+        },
+        {
+            name: "LinkedIn",
+            img: "lkdin-pg.svg",
+            comming_soon: true
+        },
+        {
+            name: "LinkedIn Ads",
+            img: "lkdin-ads.svg",
+            comming_soon: true
+        },
+        {
+            name: "Twitter",
+            img: "twr.svg",
+            comming_soon: true
+        },
+        {
+            name: "Twitter Ads",
+            img: "twr.svg",
+            comming_soon: true
+        },
+        {
+            name: "Youtube",
+            img: "ytbe.svg",
+            comming_soon: true
+        },
+        {
+            name: "Active Campaign",
+            img: "ac.svg",
+            comming_soon: true
+        },
+        {
+            name: "Campaign Monitor",
+            img: "ca-mon.svg",
+            comming_soon: true
+        },
+        {
+            name: "Drip",
+            img: "drip.svg",
+            comming_soon: true
+        },
+        {
+            name: "GetResponse",
+            img: "gtres.svg",
+            comming_soon: true
+        },
+        {
+            name: "Google Analytics 4 (GA4)",
+            img: "ga4.svg",
+            comming_soon: true
+        },
+        {
+            name: "Google My Business",
+            img: "gmb.svg",
+            comming_soon: true
+        },
+        {
+            name: "Google Page Speed Insights",
+            img: "gps.svg",
+            comming_soon: true
+        },
+        {
+            name: "Google Search Console",
+            img: "gsh.svg",
+            comming_soon: true
+        },
+        {
+            name: "Google Sheets",
+            img: "gs.svg",
+            comming_soon: true
+        },
+        {
+            name: "HubSpot",
+            img: "hubspot.svg",
+            comming_soon: true
+        },
+        {
+            name: "Klaviyo",
+            img: "klaviyo.svg",
+            comming_soon: true
+        },
+        {
+            name: "Mailchimp",
+            img: "mlchmp.svg",
+            comming_soon: true
+        },
+        {
+            name: "Mention",
+            img: "ment.svg",
+            comming_soon: true
+        },
+        {
+            name: "Paypal",
+            img: "paypal.svg",
+            comming_soon: true
+        },
+        {
+            name: "Pingdom",
+            img: "pingdom.svg",
+            comming_soon: true
+        },
+        {
+            name: "SE Ranking",
+            img: "se-ranking.svg",
+            comming_soon: true
+        },
+        {
+            name: "Sendgrid",
+            img: "sendgrid.svg",
+            comming_soon: true
+        },
+        {
+            name: "Sendinblue",
+            img: "sendin-blue.svg",
+            comming_soon: true
+        },
+        {
+            name: "Serpstat",
+            img: "serpstat.svg",
+            comming_soon: true
+        },
+        {
+            name: "Shopify",
+            img: "spf.svg",
+            comming_soon: true
+        },
+        {
+            name: "Stripe",
+            img: "str.svg",
+            comming_soon: true
+        },
+        {
+            name: "WhatConverts",
+            img: "wcs.svg",
+            comming_soon: true
+        },
+        {
+            name: "Wistia",
+            img: "wistia.svg",
+            comming_soon: true
+        },
+        {
+            name: "WooCommerce",
+            img: "woocommerce.svg",
+            comming_soon: true
+        },
+        {
+            name: "Wordpress",
+            img: "wordpress.svg",
+            comming_soon: true
+        },
+        {
+            name: "Xero",
+            img: "xero.svg",
+            comming_soon: true
+        },
+        {
+            name: "Vimeo",
+            img: "vimeo.svg",
+            comming_soon: true
+        }
+    ];
+    const t = {{analytics_integrated|safe}}
+    let addedIntegrations = [];
+    if (t == 1) {
+        addedIntegrations.push({
+            name: "Google Analytics",
+            img: "ga.svg",
+            comming_soon: false
+        });
+    }
+    const render = (arr, isAddedIntegrations = true) => {
+        let html = "";
+        arr.forEach(item => {
+            const t = `<div class="card integration">
+                    <div>
+                        <img src="../static/logos/${item.img}" class="mr-2" style="height: 26px; width: 26px"> 
+                        <span style="font-size: 12.6px">${item.name}</span>
+                    </div>
+                    <div class="ml-auto small text-muted pl-1 pr-1 comming-soon">${item.comming_soon ? "coming soon" : ""}</div>
+                </div>`;
+            if (isAddedIntegrations) html += `<a href="/report/datareport">${t}</a>`    // Need to change this
+            else html += t;
+        })
+        document.querySelector(".integrations").innerHTML = html;
+        if (isAddedIntegrations) return;
+        const integrations = document.querySelectorAll(".integration");
+        integrations.forEach((integration, i) => {
+            integration.addEventListener("click", () => {
+                if (arr[i].name != "Google Analytics") return;
+                window.open("/djauthapp/gauth", "_self")
+                addedIntegrations.push(arr[i]);
+                addIntegrationButton.style.display = "";
+                viewClientButton.style.display = "none";
+                render(addedIntegrations);
+            })
+        })
+    }
+    render(addedIntegrations)
+
+    const addIntegrationButton = document.querySelector(".add-integration")
+    const viewClientButton = document.querySelector(".view-client");
+    addIntegrationButton.addEventListener("click", () => {
+        addIntegrationButton.style.display = "none";
+        viewClientButton.style.display = "";
+        render(integrations, false);
+    })
+    viewClientButton.addEventListener("click", () => {
+        addIntegrationButton.style.display = "";
+        viewClientButton.style.display = "none";
+        render(addedIntegrations);
+    })
+</script>
+<!-- <script src="../../static/assets/js/vendor-all.min.js"></script>
+<script src="../../static/assets/js/ripple.js"></script>
+<script src="../../static/assets/js/pcoded.min.js"></script>
+<script src="../../static/assets/js/menu-setting.min.js"></script>
+<script src="../../static/assets/js/pages/index.js"></script>
+
+<script src="{%static 'js/jquery-3.1.1.min.js'%}"></script>
+<script src="{%static 'js/popper.min.js'%}"></script>
+<script src="{%static 'js/bootstrap.min.js'%}"></script>
+<script src="{%static 'js/perfect-scrollbar.min.js'%}"></script>
+<script src="{%static 'js/sc.js'%}"></script>
+
+<script>
+    $(document).ready(function () {
+        App.init();
+    });
+</script> -->
+{% endblock body %}

@@ -1,0 +1,80 @@
+name: Auto Deploy to AWS Elastic Beanstalk with PostgreSQL
+
+on:
+  push:
+    branches: [main, backend]  # Trigger on both main and backend branches
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Updated to v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # Updated to match production
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install awsebcli psycopg2-binary python-dotenv Django djangorestframework
+
+      - name: Test Database Configuration
+        run: |
+          echo "🔧 Testing PostgreSQL configuration..."
+          python smart_db_config.py || echo "⚠️ Database test failed, will use SQLite fallback"
+
+      - name: Build React Frontend
+        run: |
+          echo "📦 Building React Frontend..."
+          cd paeshift-frontend
+          npm install
+          echo "🔧 Setting production environment variables..."
+          export VITE_API_BASE_URL="http://payshift-production.eba-qadiqdti.us-east-1.elasticbeanstalk.com"
+          export VITE_APP_ENV="production"
+          echo "🏗️ Building React app for production..."
+          npm run build
+          echo "✅ React build completed successfully"
+          cd ..
+
+      - name: Configure AWS credentials
+        run: |
+          mkdir -p ~/.aws
+          echo "[default]" > ~/.aws/credentials
+          echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+          echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+          echo "[default]" > ~/.aws/config
+          echo "region = us-east-1" >> ~/.aws/config
+          echo "output = json" >> ~/.aws/config
+
+      - name: Initialize EB application
+        run: |
+          eb init paeshift -p "Python 3.11" --region us-east-1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Collect Static Files
+        run: |
+          echo "📁 Collecting Django static files..."
+          python manage.py collectstatic --noinput || echo "⚠️ Static files collection failed, continuing..."
+
+      - name: Deploy to Elastic Beanstalk with PostgreSQL
+        run: |
+          echo "🚀 Deploying to Elastic Beanstalk with PostgreSQL configuration..."
+          eb deploy payshift-production --timeout 20
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Post-Deployment Status
+        run: |
+          echo "✅ Deployment completed!"
+          echo "🔗 Application URL: http://payshift-production.eba-qadiqdti.us-east-1.elasticbeanstalk.com"
+          echo "📊 Database: PostgreSQL primary with SQLite fallback"
+          eb status

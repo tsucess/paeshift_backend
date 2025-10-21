@@ -1,0 +1,152 @@
+{% extends 'index.html' %} {%load static%} {% block body %}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+                <div class="row">
+                    <div class="col card m-2 pt-4 pb-4" style="padding-left: 100px; padding-right:100px;">
+                        <div>
+                            <div>
+                                <span class="ml-1">Leads by Country</span>
+                            </div>
+                            <canvas id="chart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="col card m-2 pt-4 pb-4" style="padding-left: 100px; padding-right:100px;">
+                        <div>
+                            <div>
+                                <span class="ml-1">Leads by Region</span>
+                            </div>
+                            <canvas id="chart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col card m-2 pt-4 pb-4" style="padding-left: 100px; padding-right:100px;">
+                        <div>
+                            <div>
+                                <span class="ml-1">Leads by Device</span>
+                            </div>
+                            <canvas id="chart3"></canvas>
+                        </div>
+                    </div>
+                    <div class="col card m-2 pt-4 pb-4" style="padding-left: 100px; padding-right:100px;">
+                        <div>
+                            <div>
+                                <span class="ml-1">Pages Visited</span>
+                            </div>
+                            <canvas id="chart4"></canvas>
+                        </div>
+                    </div>
+                
+    
+
+    <script>
+        $(document).ready(function () {
+            App.init();
+        });
+    </script>
+    <script src="{%static 'js/custom.js'%}"></script>
+    <script>
+        var labels1 = {{ country_labels| safe }};
+        let hue = 240;
+        let colors = [];
+        labels1.forEach(label => {
+            colors.push(`hsl(${hue}, 100%, 50%)`);
+            hue = (hue + 60) % 360
+        })
+        const data1 = {
+            labels: labels1,
+            datasets: [
+                {
+                    label: "Leads",
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    data: {{ country_graph| safe }}
+                }
+            ]
+        };
+        const config1 = {
+            type: "pie",
+            data: data1,
+            options: {}
+        };
+        const myChart1 = new Chart(document.getElementById("chart1"), config1);
+        var labels2 = {{ region_labels| safe }};
+        hue = 240;
+        colors = [];
+        labels2.forEach(label => {
+            colors.push(`hsl(${hue}, 100%, 50%)`);
+            hue = (hue + 60) % 360
+        })
+        const data2 = {
+            labels: labels2,
+            datasets: [
+                {
+                    label: "Leads",
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    data: {{ region_graph| safe }}
+                }
+            ]
+        };
+        const config2 = {
+            type: "pie",
+            data: data2,
+            options: {}
+        };
+        const myChart2 = new Chart(document.getElementById("chart2"), config2);
+        var labels3 = {{ device_labels| safe }};
+        hue = 240;
+        colors = [];
+        labels3.forEach(label => {
+            colors.push(`hsl(${hue}, 100%, 50%)`);
+            hue = (hue + 40) % 360
+        })
+        const data3 = {
+            labels: labels3,
+            datasets: [
+                {
+                    label: "Leads",
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    data: {{ device_graph| safe }}
+                }
+            ]
+        };
+        const config3 = {
+            type: "pie",
+            data: data3,
+            options: {}
+        };
+        const myChart3 = new Chart(document.getElementById("chart3"), config3);
+        var labels4 = {{ pages_labels| safe }};
+        hue = 240;
+        colors = [];
+        labels4.forEach(label => {
+            colors.push(`hsl(${hue}, 100%, 50%)`);
+            hue = (hue + 40) % 360
+        })
+        const data4 = {
+            labels: labels4,
+            datasets: [
+                {
+                    label: "Number of Clicks",
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    data: {{ pages_graph| safe }}
+                }
+            ]
+        };
+        const config4 = {
+            type: "pie",
+            data: data4,
+            options: {}
+        };
+        const myChart4 = new Chart(document.getElementById("chart4"), config4);
+    </script>
+
+    {% endblock body %}

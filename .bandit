@@ -1,0 +1,10 @@
+exclude_dirs:
+  - 'tests'
+  - 'migrations'
+  - 'venv'
+  - '.env'
+  - 'frontend/build/static'
+
+skips:
+  - 'B101'  # Skip assert checks in test files
+  - 'B301'  # Skip pickle usage checks

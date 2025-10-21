@@ -1,0 +1,78 @@
+{% extends 'index.html' %} {%load static%} {% block body %}
+
+<!-- jQuery library -->
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+                <div class="row">
+                    <div class="col card m-2 p-4">
+                        <div>
+                            <div>
+                                <span class="ml-1">Income (Last 6 Months)</span>
+                            </div>
+                            <canvas id="chart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="col card m-2 p-4">
+                        <div>
+                            <div>
+                                <span class="ml-1">Income By Source</span>
+                            </div>
+                            <canvas id="chart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+
+<script>
+    $(document).ready(function () {
+        App.init();
+    });
+</script>
+<script src="{%static 'js/custom.js'%}"></script>
+<script>
+    var labels1 = {{ date_labels| safe }};
+    const data1 = {
+        labels: labels1,
+        datasets: [
+            {
+                label: "Income vs Month",
+                backgroundColor: "rgb(0, 0, 255)",
+                borderColor: "rgb(0, 0, 255)",
+                data: {{ date_graph| safe }}
+                }
+            ]
+        };
+    const config1 = {
+        type: "line",
+        data: data1,
+        options: {}
+    };
+    const myChart1 = new Chart(document.getElementById("chart1"), config1);
+    var labels2 = {{ source_labels| safe }};
+    const data2 = {
+        labels: labels2,
+        datasets: [
+            {
+                label: "Income vs Source",
+                backgroundColor: "rgb(0, 0, 255)",
+                borderColor: "rgb(0, 0, 255)",
+                data: {{ source_graph| safe }}
+                }
+            ]
+        };
+    const config2 = {
+        type: "bar",
+        data: data2,
+        options: {}
+    };
+    const myChart2 = new Chart(document.getElementById("chart2"), config2);
+
+
+</script>
+
+{% endblock body %}

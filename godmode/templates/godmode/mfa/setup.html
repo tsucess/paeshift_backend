@@ -1,0 +1,61 @@
+{% extends "godmode/base.html" %}
+{% load static %}
+
+{% block title %}Set Up MFA - God Mode{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Set Up Multi-Factor Authentication</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p>Multi-Factor Authentication (MFA) adds an extra layer of security to your God Mode account. Follow these steps to set it up:</p>
+                        <ol>
+                            <li>Download an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy on your mobile device.</li>
+                            <li>Scan the QR code below with your authenticator app.</li>
+                            <li>Enter the 6-digit verification code from your authenticator app to confirm setup.</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 offset-md-3 text-center">
+                            <div class="qr-code-container mb-3">
+                                <img src="{% url 'godmode:mfa_qr_code' %}?uri={{ uri|urlencode }}" alt="QR Code" class="img-fluid border p-2">
+                            </div>
+                            <p class="text-muted">Can't scan the QR code? Use this secret key instead:</p>
+                            <div class="secret-key-container mb-3">
+                                <code class="p-2 bg-light d-block">{{ secret }}</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="{% url 'godmode:mfa_setup_confirm' %}">
+                        {% csrf_token %}
+                        <div class="form-group row">
+                            <label for="code" class="col-md-4 col-form-label text-md-right">Verification Code</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" id="code" name="code" required autofocus placeholder="Enter 6-digit code">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row mb-0">
+                            <div class="col-md-6 offset-md-4">
+                                <button type="submit" class="btn btn-primary">
+                                    Verify and Enable MFA
+                                </button>
+                                <a href="{% url 'godmode:dashboard' %}" class="btn btn-secondary ml-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

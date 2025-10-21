@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="26px" height="26px" viewBox="0 0 26 26" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>Element/Icon Logo/Google Ads</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Element/Icon-Logo/Google-Ads" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="ads_192px_clr" transform="translate(0.000000, 1.000000)">
+            <polygon id="Rectangle" fill="#FBBC04" transform="translate(8.666602, 11.945465) rotate(-59.999272) translate(-8.666602, -11.945465) " points="0.000372367893 7.61198091 17.332832 7.61198091 17.332832 16.2789493 0.000372367893 16.2789493"></polygon>
+            <path d="M25.4194318,17.2826136 L16.7522727,2.27204545 C15.5556818,0.199431818 12.9054545,-0.511136364 10.8328409,0.685454545 C8.76022727,1.88204545 8.04965909,4.53227273 9.24625,6.60488636 L17.9134091,21.6154545 C19.11,23.6880682 21.7602273,24.3971591 23.8328409,23.2020455 C25.9054545,22.0054545 26.6145455,19.3552273 25.4194318,17.2826136 Z" id="Path" fill="#4285F4"></path>
+            <circle id="Oval" fill="#34A853" cx="4.33431818" cy="19.4497727" r="4.33284091"></circle>
+        </g>
+    </g>
+</svg>

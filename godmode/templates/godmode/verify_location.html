@@ -1,0 +1,276 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Verify Location - Payshift God Mode{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    .location-history-item {
+        border-left: 3px solid #4a6cf7;
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .location-history-item .timestamp {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .location-history-item .coordinates {
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+    
+    .verification-form {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Verify Location</h1>
+    <p class="text-muted">Verify location for {{ verification.user.username }}</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Map -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Location Map</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" class="map-container"></div>
+            </div>
+        </div>
+        
+        <!-- Location History -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Location History</h5>
+            </div>
+            <div class="card-body">
+                {% for location in locations %}
+                <div class="location-history-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="timestamp">{{ location.created_at|date:"M d, Y H:i:s" }}</div>
+                            <div class="coordinates">
+                                Lat: {{ location.latitude }}, Lng: {{ location.longitude }}
+                            </div>
+                            {% if location.job %}
+                            <div class="mt-1">
+                                <span class="badge bg-info">Job: {{ location.job.title }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary show-on-map" data-lat="{{ location.latitude }}" data-lng="{{ location.longitude }}">
+                            <i class="bi bi-geo-alt"></i> Show on Map
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No location history available for this user.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- User Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">User Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Username:</strong> {{ verification.user.username }}
+                </div>
+                <div class="mb-3">
+                    <strong>Role:</strong> {{ verification.user.get_role_display }}
+                </div>
+                <div class="mb-3">
+                    <strong>Email:</strong> {{ verification.user.email }}
+                </div>
+                <div class="mb-3">
+                    <strong>Joined:</strong> {{ verification.user.date_joined|date:"M d, Y" }}
+                </div>
+                <div class="mb-3">
+                    <a href="{% url 'godmode:user_detail' verification.user.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person"></i> View User Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Verification Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Verification Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Claimed Address:</strong>
+                    <div class="mt-1">{{ verification.claimed_address }}</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Coordinates:</strong>
+                    <div class="mt-1">
+                        {% if verification.claimed_latitude and verification.claimed_longitude %}
+                        Lat: {{ verification.claimed_latitude }}, Lng: {{ verification.claimed_longitude }}
+                        {% else %}
+                        Not available
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <div class="mt-1">
+                        <span class="badge badge-status {{ verification.verification_status }}">
+                            {{ verification.get_verification_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong>Created:</strong> {{ verification.created_at|date:"M d, Y H:i" }}
+                </div>
+                {% if verification.verified_at %}
+                <div class="mb-3">
+                    <strong>Verified:</strong> {{ verification.verified_at|date:"M d, Y H:i" }}
+                </div>
+                {% endif %}
+                {% if verification.verified_by %}
+                <div class="mb-3">
+                    <strong>Verified By:</strong> {{ verification.verified_by.username }}
+                </div>
+                {% endif %}
+                {% if verification.verification_details.notes %}
+                <div class="mb-3">
+                    <strong>Notes:</strong>
+                    <div class="mt-1">{{ verification.verification_details.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Verification Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Update Verification</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'godmode:verify_location' verification.id %}" class="verification-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Verification Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            {% for status_code, status_name in status_choices %}
+                            <option value="{{ status_code }}" {% if verification.verification_status == status_code %}selected{% endif %}>
+                                {{ status_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4">{{ verification.verification_details.notes }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update Verification
+                        </button>
+                        <a href="{% url 'godmode:location_verification' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        const map = L.map('map').setView([{{ verification.claimed_latitude|default:"6.5244" }}, {{ verification.claimed_longitude|default:"3.3792" }}], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add marker for claimed address
+        {% if verification.claimed_latitude and verification.claimed_longitude %}
+        const claimedMarker = L.marker([{{ verification.claimed_latitude }}, {{ verification.claimed_longitude }}], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        }).addTo(map)
+          .bindPopup('<strong>Claimed Address:</strong><br>{{ verification.claimed_address }}');
+        {% endif %}
+        
+        // Add markers for location history
+        const locationMarkers = [];
+        {% for location in locations %}
+        (function() {
+            const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}], {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map)
+              .bindPopup('<strong>Location History:</strong><br>{{ location.created_at|date:"M d, Y H:i:s" }}{% if location.job %}<br>Job: {{ location.job.title }}{% endif %}');
+            
+            locationMarkers.push({
+                marker: marker,
+                lat: {{ location.latitude }},
+                lng: {{ location.longitude }}
+            });
+        })();
+        {% endfor %}
+        
+        // Connect the dots with a polyline if there are multiple locations
+        if (locationMarkers.length > 1) {
+            const points = locationMarkers.map(item => [item.lat, item.lng]);
+            L.polyline(points, {color: 'red', weight: 2, opacity: 0.7, dashArray: '5, 10'}).addTo(map);
+        }
+        
+        // Show location on map when button is clicked
+        const showOnMapButtons = document.querySelectorAll('.show-on-map');
+        showOnMapButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const lat = parseFloat(this.getAttribute('data-lat'));
+                const lng = parseFloat(this.getAttribute('data-lng'));
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    map.setView([lat, lng], 15);
+                    
+                    // Find and open the corresponding marker popup
+                    locationMarkers.forEach(function(item) {
+                        if (item.lat === lat && item.lng === lng) {
+                            item.marker.openPopup();
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

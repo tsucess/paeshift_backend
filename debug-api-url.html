@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug API URL</title>
+</head>
+<body>
+    <h1>Debug API URL Configuration</h1>
+    <div id="debug-info"></div>
+
+    <script type="module">
+        // This will help us debug what API URL is being used
+        const debugInfo = document.getElementById('debug-info');
+        
+        // Check environment variables (this won't work in production build, but helps debug)
+        debugInfo.innerHTML = `
+            <h3>Environment Debug:</h3>
+            <p><strong>Current Origin:</strong> ${window.location.origin}</p>
+            <p><strong>Current URL:</strong> ${window.location.href}</p>
+            <p><strong>Expected API URL:</strong> http://payshift-prod-env.eba-qadiqdti.us-west-2.elasticbeanstalk.com</p>
+            <hr>
+            <h3>Testing API Call:</h3>
+            <button onclick="testAPI()">Test API Call</button>
+            <div id="api-result"></div>
+        `;
+        
+        window.testAPI = async function() {
+            const resultDiv = document.getElementById('api-result');
+            const apiUrl = 'http://payshift-prod-env.eba-qadiqdti.us-west-2.elasticbeanstalk.com/jobs/all-users/';
+            
+            resultDiv.innerHTML = 'Testing API call...';
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<p style="color: green;">✅ API Success! URL: ${apiUrl}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: orange;">⚠️ Response Error: ${response.status} - ${response.statusText}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ API Error: ${error.message}</p><p>Attempted URL: ${apiUrl}</p>`;
+            }
+        };
+    </script>
+</body>
+</html>

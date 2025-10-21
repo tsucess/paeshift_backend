@@ -1,0 +1,94 @@
+{% extends 'index.html' %} {%load static%} {% block body %}
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+                <div class="row">
+                    <div class="col card m-2 p-4">
+                        <div>
+                            <div>
+                                <span class="ml-1">Expense (Last 6 Months)</span>
+                            </div>
+                            <canvas id="chart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="col card m-2 p-4">
+                        <div>
+                            <div>
+                                <span class="ml-1">Expense By Category</span>
+                            </div>
+                            <canvas id="chart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+           
+<script src="../../static/assets/js/vendor-all.min.js"></script>
+<!-- <script src="../../static/assets/js/plugins/bootstrap.min.js"></script> -->
+<script src="../../static/assets/js/ripple.js"></script>
+<script src="../../static/assets/js/pcoded.min.js"></script>
+<script src="../../static/assets/js/menu-setting.min.js"></script>
+<script src="../../static/assets/js/pages/index.js"></script>
+
+<script src="{%static 'js/jquery-3.1.1.min.js'%}"></script>
+<script src="{%static 'js/popper.min.js'%}"></script>
+<script src="{%static 'js/bootstrap.min.js'%}"></script>
+<script src="{%static 'js/perfect-scrollbar.min.js'%}"></script>
+<script src="{%static 'js/sc.js'%}"></script>
+
+<script>
+    $(document).ready(function () {
+        App.init();
+    });
+</script>
+<script src="{%static 'js/custom.js'%}"></script>
+<script>
+    var labels1 = {{ date_labels| safe }};
+    const data1 = {
+        labels: labels1,
+        datasets: [
+            {
+                label: "Expense vs Month",
+                backgroundColor: "rgb(0, 0, 255)",
+                borderColor: "rgb(0, 0, 255)",
+                data: {{ date_graph| safe }}
+                }
+            ]
+        };
+    const config1 = {
+        type: "line",
+        data: data1,
+        options: {}
+    };
+    const myChart1 = new Chart(document.getElementById("chart1"), config1);
+    var labels2 = {{ category_labels| safe }};
+    const data2 = {
+        labels: labels2,
+        datasets: [
+            {
+                label: "Expense vs category",
+                backgroundColor: "rgb(0, 0, 255)",
+                borderColor: "rgb(0, 0, 255)",
+                data: {{ category_graph| safe }}
+                }
+            ]
+        };
+    const config2 = {
+        type: "bar",
+        data: data2,
+        options: {}
+    };
+    const myChart2 = new Chart(document.getElementById("chart2"), config2);
+
+
+</script>
+
+{% endblock body %}

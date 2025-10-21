@@ -1,0 +1,16 @@
+{
+  "user": 43200,
+  "job": 21600,
+  "application": 10800,
+  "profile": 43200,
+  "industry": 604800,
+  "subcategory": 604800,
+  "whoami": 3600,
+  "api": 900,
+  "query": 1800,
+  "model": 86400,
+  "payment": 900,
+  "rating": 21600,
+  "review": 21600,
+  "default": 3600
+}

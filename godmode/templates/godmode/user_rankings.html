@@ -1,0 +1,201 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}User Rankings - Payshift God Mode{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rank-change {
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+    
+    .rank-up {
+        color: #28a745;
+    }
+    
+    .rank-down {
+        color: #dc3545;
+    }
+    
+    .rank-same {
+        color: #6c757d;
+    }
+    
+    .leaderboard-card {
+        transition: all 0.3s ease;
+    }
+    
+    .leaderboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .top-rank {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .medal-1 {
+        color: gold;
+    }
+    
+    .medal-2 {
+        color: silver;
+    }
+    
+    .medal-3 {
+        color: #cd7f32; /* bronze */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>User Rankings & Leaderboards</h1>
+    <div>
+        <a href="{% url 'godmode:generate_rankings' %}?ranking_type={{ ranking_type }}" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat"></i> Update Rankings
+        </a>
+    </div>
+</div>
+
+<!-- Ranking Type Selector -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Select Ranking Type</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for type_code, type_name in ranking_types %}
+            <div class="col-md-2 mb-2">
+                <a href="{% url 'godmode:user_rankings' %}?ranking_type={{ type_code }}" 
+                   class="btn btn-{% if ranking_type == type_code %}primary{% else %}outline-primary{% endif %} w-100">
+                    {{ type_name }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Top 3 Users -->
+<div class="row mb-4">
+    {% for ranking in rankings|slice:":3" %}
+    <div class="col-md-4">
+        <div class="card leaderboard-card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-trophy-fill medal-{{ forloop.counter }} display-1"></i>
+                </div>
+                <h5 class="card-title">
+                    <span class="top-rank">#{{ ranking.rank }}</span>
+                </h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ ranking.user.username }}</h6>
+                <p class="card-text">
+                    <strong>Score:</strong> {{ ranking.score|floatformat:0 }}
+                    {% if ranking.previous_score %}
+                    <span class="rank-change {% if ranking.score > ranking.previous_score %}rank-up{% elif ranking.score < ranking.previous_score %}rank-down{% else %}rank-same{% endif %}">
+                        {% if ranking.score > ranking.previous_score %}
+                        <i class="bi bi-arrow-up"></i> +{{ ranking.score|subtract:ranking.previous_score|floatformat:0 }}
+                        {% elif ranking.score < ranking.previous_score %}
+                        <i class="bi bi-arrow-down"></i> {{ ranking.score|subtract:ranking.previous_score|floatformat:0 }}
+                        {% else %}
+                        <i class="bi bi-dash"></i> 0
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </p>
+                <a href="{% url 'godmode:user_detail' ranking.user.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-person"></i> View Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Full Leaderboard -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{{ dict_ranking_types|get_item:ranking_type }} Leaderboard</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>User</th>
+                        <th>Score</th>
+                        <th>Percentile</th>
+                        <th>Previous Rank</th>
+                        <th>Change</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ranking in rankings %}
+                    <tr>
+                        <td>
+                            {% if ranking.rank <= 3 %}
+                            <i class="bi bi-trophy-fill medal-{{ ranking.rank }} me-1"></i>
+                            {% endif %}
+                            {{ ranking.rank }}
+                        </td>
+                        <td>
+                            <a href="{% url 'godmode:user_detail' ranking.user.id %}">
+                                {{ ranking.user.username }}
+                            </a>
+                            <small class="text-muted">({{ ranking.user.get_role_display }})</small>
+                        </td>
+                        <td>{{ ranking.score|floatformat:0 }}</td>
+                        <td>{{ ranking.percentile|floatformat:1 }}%</td>
+                        <td>
+                            {% if ranking.previous_rank %}
+                            {{ ranking.previous_rank }}
+                            {% else %}
+                            --
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if ranking.previous_rank %}
+                            {% with rank_change=ranking.previous_rank|subtract:ranking.rank %}
+                            <span class="rank-change {% if rank_change > 0 %}rank-up{% elif rank_change < 0 %}rank-down{% else %}rank-same{% endif %}">
+                                {% if rank_change > 0 %}
+                                <i class="bi bi-arrow-up"></i> +{{ rank_change }}
+                                {% elif rank_change < 0 %}
+                                <i class="bi bi-arrow-down"></i> {{ rank_change }}
+                                {% else %}
+                                <i class="bi bi-dash"></i> 0
+                                {% endif %}
+                            </span>
+                            {% endwith %}
+                            {% else %}
+                            <span class="text-muted">New</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'godmode:user_detail' ranking.user.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-person"></i> Profile
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No rankings available. Click "Update Rankings" to generate them.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any rankings-specific JavaScript here
+    });
+</script>
+{% endblock %}

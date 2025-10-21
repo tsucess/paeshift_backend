@@ -1,0 +1,295 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Dashboard - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Dashboard</h1>
+    <div>
+        <a href="{% url 'godmode:run_simulation' %}" class="btn btn-primary">
+            <i class="bi bi-play-circle"></i> Run Simulation
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card stat-card users">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-value">{{ user_count }}</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-person-badge"></i> {{ admin_count }} Admins
+                        <i class="bi bi-person-circle ms-2"></i> {{ client_count }} Clients
+                        <i class="bi bi-person ms-2"></i> {{ applicant_count }} Applicants
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card jobs">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-value">{{ job_count }}</div>
+                        <div class="stat-label">Total Jobs</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-file-earmark-text"></i> {{ application_count }} Applications
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card payments">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-value">{{ payment_count }}</div>
+                        <div class="stat-label">Total Payments</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-credit-card"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-currency-dollar"></i> Transactions
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-value">{{ dispute_count }}</div>
+                        <div class="stat-label">Total Disputes</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-people"></i> {{ active_users }} Active Users (24h)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Tools -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Admin Tools</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'godmode:work_assignments' %}" class="btn btn-primary btn-lg d-block">
+                            <i class="bi bi-briefcase"></i> Work Assignments
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'godmode:data_exports' %}" class="btn btn-success btn-lg d-block">
+                            <i class="bi bi-file-earmark-excel"></i> Export Data
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'godmode:webhook_logs' %}" class="btn btn-info btn-lg d-block">
+                            <i class="bi bi-arrow-repeat"></i> Webhook Logs
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'godmode:user_rankings' %}" class="btn btn-warning btn-lg d-block">
+                            <i class="bi bi-trophy"></i> User Rankings
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'godmode:security_dashboard' %}" class="btn btn-danger btn-lg d-block">
+                            <i class="bi bi-shield-lock"></i> Security Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Activity -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Recent User Activity</span>
+                    <a href="{% url 'godmode:user_activity' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Activity</th>
+                                <th>Points</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in recent_activity %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'godmode:user_detail' activity.user.id %}">
+                                        {{ activity.user.username }}
+                                    </a>
+                                </td>
+                                <td>{{ activity.activity_type }}</td>
+                                <td>{{ activity.points_earned }}</td>
+                                <td>{{ activity.timestamp|date:"M d, H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No recent activity</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Logins -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Recent Logins</span>
+                    <a href="{% url 'godmode:user_activity' %}?action_type=login" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>IP Address</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for login in recent_logins %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'godmode:user_detail' login.user.id %}">
+                                        {{ login.user.username }}
+                                    </a>
+                                </td>
+                                <td>{{ login.ip_address|default:"N/A" }}</td>
+                                <td>{{ login.timestamp|date:"M d, H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No recent logins</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Simulations -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Recent Simulations</span>
+                    <a href="{% url 'godmode:simulations' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Started</th>
+                                <th>Completed</th>
+                                <th>Initiated By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for simulation in recent_simulations %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'godmode:simulation_detail' simulation.id %}">
+                                        {{ simulation.get_simulation_type_display }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status {{ simulation.status }}">
+                                        {{ simulation.status|title }}
+                                    </span>
+                                </td>
+                                <td>{{ simulation.started_at|date:"M d, H:i" }}</td>
+                                <td>{{ simulation.completed_at|date:"M d, H:i"|default:"--" }}</td>
+                                <td>{{ simulation.initiated_by.username|default:"System" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No recent simulations</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add any dashboard-specific JavaScript here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Example: Auto-refresh the dashboard every 5 minutes
+        setTimeout(function() {
+            window.location.reload();
+        }, 5 * 60 * 1000);
+    });
+</script>
+{% endblock %}

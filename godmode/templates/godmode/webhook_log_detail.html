@@ -1,0 +1,148 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Webhook Log Detail - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Webhook Log Detail</h1>
+    <div>
+        <a href="{% url 'godmode:webhook_logs' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Logs
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <!-- Webhook Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Webhook Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Reference:</strong> {{ log.reference }}
+                </div>
+                <div class="mb-3">
+                    <strong>Gateway:</strong> {{ log.get_gateway_display }}
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge badge-status {{ log.status }}">
+                        {{ log.get_status_display }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>IP Address:</strong> {{ log.ip_address|default:"N/A" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Timestamp:</strong> {{ log.created_at|date:"M d, Y H:i:s" }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Payment -->
+        {% if payment %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Related Payment</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Amount:</strong> {{ payment.amount }}
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{{ payment.status|lower }}">
+                        {{ payment.status }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Payer:</strong>
+                    <a href="{% url 'godmode:user_detail' payment.payer.id %}">
+                        {{ payment.payer.username }}
+                    </a>
+                </div>
+                <div class="mb-3">
+                    <strong>Payment Method:</strong> {{ payment.payment_method }}
+                </div>
+                <div class="mb-3">
+                    <strong>Created:</strong> {{ payment.created_at|date:"M d, Y H:i:s" }}
+                </div>
+                <div class="mb-3">
+                    <a href="{% url 'admin:payment_payment_change' payment.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="bi bi-pencil"></i> View in Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Related Transactions -->
+        {% if transactions %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Related Transactions</h5>
+            </div>
+            <div class="card-body">
+                {% for transaction in transactions %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="mb-2">
+                        <strong>Transaction ID:</strong> {{ transaction.id }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Amount:</strong> {{ transaction.amount }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        <span class="badge bg-{{ transaction.status|lower }}">
+                            {{ transaction.status }}
+                        </span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Created:</strong> {{ transaction.created_at|date:"M d, Y H:i:s" }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Request Data -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Request Data</h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3">{{ log.request_data|pprint }}</pre>
+            </div>
+        </div>
+        
+        <!-- Response Data -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Response Data</h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3">{{ log.response_data|pprint }}</pre>
+            </div>
+        </div>
+        
+        <!-- Error Message -->
+        {% if log.error_message %}
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">Error Message</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    {{ log.error_message }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

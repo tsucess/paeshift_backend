@@ -1,0 +1,441 @@
+{% extends "godmode/base.html" %}
+{% load static %}
+
+{% block title %}Cache Consistency - God Mode{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-critical {
+        background-color: #ffdddd;
+        color: #d32f2f;
+    }
+    .status-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-good {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-unknown {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    .progress-bar-critical {
+        background-color: #d32f2f;
+    }
+    .progress-bar-warning {
+        background-color: #ffc107;
+    }
+    .progress-bar-good {
+        background-color: #28a745;
+    }
+    .progress-bar-unknown {
+        background-color: #6c757d;
+    }
+    .model-card {
+        transition: all 0.3s ease;
+    }
+    .model-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .action-buttons {
+        opacity: 0.3;
+        transition: opacity 0.3s ease;
+    }
+    .model-card:hover .action-buttons {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Cache Consistency Dashboard</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Overview</h6>
+                            <p>This dashboard shows the consistency between Redis cache and the database.</p>
+                            <ul>
+                                <li><strong>Total Models:</strong> {{ total_models }}</li>
+                                <li><strong>Models with Stats:</strong> {{ models_with_stats }}</li>
+                                {% if average_consistency is not None %}
+                                <li><strong>Average Consistency:</strong> {{ average_consistency|floatformat:2 }}%</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Status Summary</h6>
+                            <div class="progress mb-2" style="height: 25px;">
+                                {% if total_models > 0 %}
+                                <div class="progress-bar progress-bar-critical" role="progressbar" 
+                                     style="width: {{ status_counts.critical|default:0|floatformat:0 }}%;" 
+                                     aria-valuenow="{{ status_counts.critical|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_models }}">
+                                    {{ status_counts.critical|default:0 }} Critical
+                                </div>
+                                <div class="progress-bar progress-bar-warning" role="progressbar" 
+                                     style="width: {{ status_counts.warning|default:0|floatformat:0 }}%;" 
+                                     aria-valuenow="{{ status_counts.warning|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_models }}">
+                                    {{ status_counts.warning|default:0 }} Warning
+                                </div>
+                                <div class="progress-bar progress-bar-good" role="progressbar" 
+                                     style="width: {{ status_counts.good|default:0|floatformat:0 }}%;" 
+                                     aria-valuenow="{{ status_counts.good|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_models }}">
+                                    {{ status_counts.good|default:0 }} Good
+                                </div>
+                                <div class="progress-bar progress-bar-unknown" role="progressbar" 
+                                     style="width: {{ status_counts.unknown|default:0|floatformat:0 }}%;" 
+                                     aria-valuenow="{{ status_counts.unknown|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_models }}">
+                                    {{ status_counts.unknown|default:0 }} Unknown
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button id="check-all-btn" class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i> Check All Models
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="models-container">
+        {% for model_stat in model_stats %}
+        <div class="col-md-4 mb-4">
+            <div class="card model-card h-100 {% if model_stat.status %}status-{{ model_stat.status }}{% endif %}" 
+                 data-app="{{ model_stat.app }}" data-model="{{ model_stat.model }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ model_stat.app }}.{{ model_stat.model }}</h6>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary check-btn" 
+                                data-app="{{ model_stat.app }}" data-model="{{ model_stat.model }}">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success reconcile-btn" 
+                                data-app="{{ model_stat.app }}" data-model="{{ model_stat.model }}">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if model_stat.stats %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Consistency:</span>
+                            <strong>{{ model_stat.consistency_ratio|floatformat:2 }}%</strong>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-{{ model_stat.status }}" role="progressbar" 
+                                 style="width: {{ model_stat.consistency_ratio|floatformat:2 }}%;" 
+                                 aria-valuenow="{{ model_stat.consistency_ratio|floatformat:0 }}" 
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <small>Total: {{ model_stat.stats.total }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small>Consistent: {{ model_stat.stats.consistent }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small>Inconsistent: {{ model_stat.stats.inconsistent }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small>Missing: {{ model_stat.stats.missing }}</small>
+                        </div>
+                    </div>
+                    {% if model_stat.timestamp %}
+                    <div class="mt-2">
+                        <small class="text-muted">Last checked: {{ model_stat.timestamp|date:"Y-m-d H:i" }} ({{ model_stat.age_hours|floatformat:1 }} hours ago)</small>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <p class="mb-0">No consistency data available</p>
+                        <button class="btn btn-sm btn-primary mt-2 check-btn" 
+                                data-app="{{ model_stat.app }}" data-model="{{ model_stat.model }}">
+                            Check Consistency
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if model_stat.stats.inconsistent > 0 %}
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-link" type="button" data-toggle="collapse" 
+                            data-target="#details-{{ model_stat.app }}-{{ model_stat.model }}">
+                        Show Details
+                    </button>
+                    <div class="collapse" id="details-{{ model_stat.app }}-{{ model_stat.model }}">
+                        <div class="mt-2">
+                            <h6>Inconsistent Fields:</h6>
+                            <ul class="small">
+                                {% for field, count in model_stat.stats.inconsistent_fields.items %}
+                                <li>{{ field }}: {{ count }} instances</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Reconciliation Modal -->
+<div class="modal fade" id="reconcileModal" tabindex="-1" role="dialog" aria-labelledby="reconcileModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reconcileModalLabel">Reconcile Cache</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to reconcile the cache for <strong id="reconcile-model-name"></strong>.</p>
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="force-reconcile">
+                        <label class="custom-control-label" for="force-reconcile">Force reconciliation (ignore timestamps)</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="batch-size">Batch Size</label>
+                    <input type="number" class="form-control" id="batch-size" value="100">
+                    <small class="form-text text-muted">Number of instances to process in each batch</small>
+                </div>
+                <div class="form-group">
+                    <label for="max-instances">Max Instances</label>
+                    <input type="number" class="form-control" id="max-instances" value="1000">
+                    <small class="form-text text-muted">Maximum number of instances to process</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-reconcile">Reconcile</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Check consistency for a model
+        $('.check-btn').on('click', function() {
+            const app = $(this).data('app');
+            const model = $(this).data('model');
+            const btn = $(this);
+            
+            btn.html('<i class="fas fa-spinner fa-spin"></i>');
+            btn.prop('disabled', true);
+            
+            $.ajax({
+                url: `/godmode/cache-consistency/check/${app}/${model}/`,
+                method: 'GET',
+                success: function(response) {
+                    // Update the card with new data
+                    const card = $(`.model-card[data-app="${app}"][data-model="${model}"]`);
+                    
+                    // Remove old status classes
+                    card.removeClass('status-critical status-warning status-good status-unknown');
+                    
+                    // Add new status class
+                    card.addClass(`status-${response.status}`);
+                    
+                    // Update card content
+                    const cardBody = card.find('.card-body');
+                    cardBody.html(`
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Consistency:</span>
+                                <strong>${(response.consistency_ratio * 100).toFixed(2)}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-${response.status}" role="progressbar" 
+                                     style="width: ${(response.consistency_ratio * 100).toFixed(2)}%;" 
+                                     aria-valuenow="${(response.consistency_ratio * 100).toFixed(0)}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <small>Total: ${response.stats.total}</small>
+                            </div>
+                            <div class="col-6">
+                                <small>Consistent: ${response.stats.consistent}</small>
+                            </div>
+                            <div class="col-6">
+                                <small>Inconsistent: ${response.stats.inconsistent}</small>
+                            </div>
+                            <div class="col-6">
+                                <small>Missing: ${response.stats.missing}</small>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">Last checked: ${new Date().toLocaleString()} (0.0 hours ago)</small>
+                        </div>
+                    `);
+                    
+                    // Add details if there are inconsistencies
+                    if (response.stats.inconsistent > 0) {
+                        const cardFooter = card.find('.card-footer');
+                        if (cardFooter.length === 0) {
+                            card.append(`
+                                <div class="card-footer">
+                                    <button class="btn btn-sm btn-link" type="button" data-toggle="collapse" 
+                                            data-target="#details-${app}-${model}">
+                                        Show Details
+                                    </button>
+                                    <div class="collapse" id="details-${app}-${model}">
+                                        <div class="mt-2">
+                                            <h6>Inconsistent Fields:</h6>
+                                            <ul class="small">
+                                                ${Object.entries(response.stats.inconsistent_fields).map(([field, count]) => 
+                                                    `<li>${field}: ${count} instances</li>`
+                                                ).join('')}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        } else {
+                            cardFooter.html(`
+                                <button class="btn btn-sm btn-link" type="button" data-toggle="collapse" 
+                                        data-target="#details-${app}-${model}">
+                                    Show Details
+                                </button>
+                                <div class="collapse" id="details-${app}-${model}">
+                                    <div class="mt-2">
+                                        <h6>Inconsistent Fields:</h6>
+                                        <ul class="small">
+                                            ${Object.entries(response.stats.inconsistent_fields).map(([field, count]) => 
+                                                `<li>${field}: ${count} instances</li>`
+                                            ).join('')}
+                                        </ul>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    }
+                    
+                    // Update summary stats (would require a full page reload for accuracy)
+                    // For now, just show a success message
+                    toastr.success(`Consistency check completed for ${app}.${model}`);
+                },
+                error: function(xhr, status, error) {
+                    toastr.error(`Error checking consistency: ${error}`);
+                },
+                complete: function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                    btn.prop('disabled', false);
+                }
+            });
+        });
+        
+        // Open reconciliation modal
+        $('.reconcile-btn').on('click', function() {
+            const app = $(this).data('app');
+            const model = $(this).data('model');
+            
+            $('#reconcile-model-name').text(`${app}.${model}`);
+            $('#reconcileModal').data('app', app).data('model', model).modal('show');
+        });
+        
+        // Confirm reconciliation
+        $('#confirm-reconcile').on('click', function() {
+            const app = $('#reconcileModal').data('app');
+            const model = $('#reconcileModal').data('model');
+            const force = $('#force-reconcile').prop('checked');
+            const batchSize = $('#batch-size').val();
+            const maxInstances = $('#max-instances').val();
+            
+            // Disable button and show spinner
+            const btn = $(this);
+            btn.html('<i class="fas fa-spinner fa-spin"></i> Reconciling...').prop('disabled', true);
+            
+            $.ajax({
+                url: `/godmode/cache-consistency/reconcile/${app}/${model}/`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    force: force,
+                    batch_size: parseInt(batchSize),
+                    max_instances: parseInt(maxInstances)
+                }),
+                success: function(response) {
+                    $('#reconcileModal').modal('hide');
+                    toastr.success(response.message);
+                    
+                    // If the response includes stats, update the card
+                    if (response.stats) {
+                        // This would be a direct execution response
+                        // We would need to update the card with the new stats
+                        // For simplicity, we'll just reload the page after a delay
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    toastr.error(`Error reconciling cache: ${error}`);
+                },
+                complete: function() {
+                    btn.html('Reconcile').prop('disabled', false);
+                }
+            });
+        });
+        
+        // Check all models
+        $('#check-all-btn').on('click', function() {
+            const btn = $(this);
+            btn.html('<i class="fas fa-spinner fa-spin"></i> Checking...').prop('disabled', true);
+            
+            $.ajax({
+                url: '/godmode/cache-consistency/check-all/',
+                method: 'POST',
+                success: function(response) {
+                    toastr.success(response.message);
+                    
+                    // If the response includes results, update the page
+                    if (response.results) {
+                        // This would be a direct execution response
+                        // We would need to update all cards with the new stats
+                        // For simplicity, we'll just reload the page after a delay
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    toastr.error(`Error checking all models: ${error}`);
+                },
+                complete: function() {
+                    btn.html('<i class="fas fa-sync-alt"></i> Check All Models').prop('disabled', false);
+                }
+            });
+        });
+        
+        // Reset modal when hidden
+        $('#reconcileModal').on('hidden.bs.modal', function() {
+            $('#force-reconcile').prop('checked', false);
+            $('#batch-size').val(100);
+            $('#max-instances').val(1000);
+        });
+    });
+</script>
+{% endblock %}

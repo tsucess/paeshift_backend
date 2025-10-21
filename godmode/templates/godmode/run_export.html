@@ -1,0 +1,93 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Run Export - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Run Export: {{ config.name }}</h1>
+    <div>
+        <a href="{% url 'godmode:data_exports' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Exports
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Export Options</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6>Configuration Details</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 150px;">Name</th>
+                                <td>{{ config.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Model</th>
+                                <td>{{ config.model_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Description</th>
+                                <td>{{ config.description|default:"No description provided." }}</td>
+                            </tr>
+                            <tr>
+                                <th>Fields</th>
+                                <td>
+                                    <ul class="mb-0">
+                                        {% for field in config.fields %}
+                                        <li>{{ field }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                            {% if config.filters %}
+                            <tr>
+                                <th>Filters</th>
+                                <td>
+                                    <pre class="bg-light p-2 mb-0">{{ config.filters|pprint }}</pre>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                <form method="post" action="{% url 'godmode:run_export' config.id %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h6>Export Format</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="formatCsv" value="csv" checked>
+                            <label class="form-check-label" for="formatCsv">
+                                CSV (Comma Separated Values)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="formatXlsx" value="xlsx">
+                            <label class="form-check-label" for="formatXlsx">
+                                XLSX (Excel)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> This export will include all records matching the configuration. The download will start automatically when ready.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-download"></i> Download Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

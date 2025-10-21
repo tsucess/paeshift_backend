@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="26px" height="26px" viewBox="0 0 26 26" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>Element/Icon Logo/Instagram</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="1.42773844%" y1="69.2378176%" x2="83.4281549%" y2="-12.7625989%" id="linearGradient-1">
+            <stop stop-color="#DE993D" offset="0%"></stop>
+            <stop stop-color="#C54C4D" offset="30%"></stop>
+            <stop stop-color="#C01C75" offset="60%"></stop>
+            <stop stop-color="#7025C2" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="-9877.21417%" y1="-4882.76973%" x2="-9877.21417%" y2="-5073.91304%" id="linearGradient-2">
+            <stop stop-color="#DE993D" offset="0%"></stop>
+            <stop stop-color="#C54C4D" offset="30%"></stop>
+            <stop stop-color="#C01C75" offset="60%"></stop>
+            <stop stop-color="#7025C2" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="134.395973%" y1="909.899329%" x2="134.395973%" y2="115.151007%" id="linearGradient-3">
+            <stop stop-color="#DE993D" offset="0%"></stop>
+            <stop stop-color="#C54C4D" offset="30%"></stop>
+            <stop stop-color="#C01C75" offset="60%"></stop>
+            <stop stop-color="#7025C2" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Element/Icon-Logo/Instagram" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="e1914645-34e1-4442-9be4-656d231422fe">
+            <path d="M18.044,0.5096 L7.956,0.5096 C3.85158574,0.51532843 0.52572843,3.84118574 0.52,7.9456 L0.52,18.044 C0.52572843,22.1484143 3.85158574,25.4742716 7.956,25.48 L18.0544,25.48 C22.1588143,25.4742716 25.4846716,22.1484143 25.4904,18.044 L25.4904,7.956 C25.4904,3.84346684 22.1565332,0.5096 18.044,0.5096 Z M22.9736,18.044 C22.9736,20.7665429 20.7665429,22.9736 18.044,22.9736 L7.956,22.9736 C5.2334571,22.9736 3.0264,20.7665429 3.0264,18.044 L3.0264,7.956 C3.0264,5.2334571 5.2334571,3.0264 7.956,3.0264 L18.0544,3.0264 C20.7769429,3.0264 22.984,5.2334571 22.984,7.956 L22.984,18.0544 L22.9736,18.044 Z" id="Shape" fill="url(#linearGradient-1)" fill-rule="nonzero"></path>
+            <path d="M13,6.5416 C9.43312417,6.5416 6.5416,9.43312417 6.5416,13 C6.5416,16.5668758 9.43312417,19.4584 13,19.4584 C16.5668758,19.4584 19.4584,16.5668758 19.4584,13 C19.4526739,9.4354987 16.5645013,6.54732612 13,6.5416 Z M13,16.9416 C10.8231144,16.9416 9.0584,15.1768856 9.0584,13 C9.0584,10.8231144 10.8231144,9.0584 13,9.0584 C15.1768856,9.0584 16.9416,10.8231144 16.9416,13 C16.9416,15.1768856 15.1768856,16.9416 13,16.9416 Z" id="Shape" fill="url(#linearGradient-2)" fill-rule="nonzero"></path>
+            <circle id="Oval" fill="url(#linearGradient-3)" cx="19.4688" cy="6.5936" r="1.5496"></circle>
+        </g>
+    </g>
+</svg>

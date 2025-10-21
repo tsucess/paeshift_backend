@@ -1,0 +1,190 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Simulation Detail - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Simulation Detail</h1>
+    <div>
+        <a href="{% url 'godmode:run_simulation' %}" class="btn btn-primary">
+            <i class="bi bi-play-circle"></i> Run New Simulation
+        </a>
+        <a href="{% url 'godmode:simulations' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <!-- Simulation Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Simulation Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>ID:</strong> {{ simulation.id }}
+                </div>
+                <div class="mb-3">
+                    <strong>Type:</strong> {{ simulation.get_simulation_type_display }}
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge badge-status {{ simulation.status }}">
+                        {{ simulation.status|title }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Started:</strong> {{ simulation.started_at|date:"M d, Y H:i:s" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Completed:</strong> {{ simulation.completed_at|date:"M d, Y H:i:s"|default:"Not completed" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Initiated By:</strong> {{ simulation.initiated_by.username|default:"System" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Duration:</strong>
+                    {% if simulation.completed_at %}
+                    {{ simulation.completed_at|timeuntil:simulation.started_at }}
+                    {% else %}
+                    {% if simulation.status == 'running' %}
+                    Running for {{ simulation.started_at|timesince }}
+                    {% else %}
+                    N/A
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Parameters -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Simulation Parameters</h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3">{{ simulation.parameters|pprint }}</pre>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'godmode:run_simulation' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat"></i> Run Similar Simulation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Results -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Simulation Results</h5>
+            </div>
+            <div class="card-body">
+                {% if simulation.result %}
+                <div class="mb-4">
+                    <h6>Summary</h6>
+                    {% if simulation.result.summary %}
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <strong>Simulations Run:</strong> {{ simulation.result.summary.simulations_run }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <strong>Successful:</strong> {{ simulation.result.summary.successful_simulations }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <strong>Failed:</strong> {{ simulation.result.summary.failed_simulations }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <strong>Execution Time:</strong> {{ simulation.result.summary.execution_time_seconds|floatformat:2 }} seconds
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <strong>Timestamp:</strong> {{ simulation.result.summary.timestamp }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No summary available</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Detailed Results</h6>
+                    <div class="accordion" id="resultAccordion">
+                        {% for key, value in simulation.result.items %}
+                        {% if key != 'summary' %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                                    {{ key|title }} Results
+                                    {% if value.success %}
+                                    <span class="badge bg-success ms-2">Success</span>
+                                    {% else %}
+                                    <span class="badge bg-danger ms-2">Failed</span>
+                                    {% endif %}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#resultAccordion">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-3">{{ value|pprint }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% elif simulation.status == 'failed' %}
+                <div class="alert alert-danger">
+                    <h6>Simulation Failed</h6>
+                    <p>{{ simulation.result.error|default:"No error details available" }}</p>
+                </div>
+                {% elif simulation.status == 'running' %}
+                <div class="alert alert-info">
+                    <h6>Simulation Running</h6>
+                    <p>This simulation is currently running. Results will be available when it completes.</p>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <h6>No Results Available</h6>
+                    <p>No results are available for this simulation.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh the page if the simulation is running
+        {% if simulation.status == 'running' %}
+        setTimeout(function() {
+            window.location.reload();
+        }, 5000); // Refresh every 5 seconds
+        {% endif %}
+    });
+</script>
+{% endblock %}

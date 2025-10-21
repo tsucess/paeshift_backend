@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Track Job #1</title>
+</head>
+<body>
+<h1>Tracking Job #1</h1>
+
+<script>
+  const jobId = 1;
+  const wsUrl = `ws://127.0.0.1:8000/ws/job/${jobId}/location/`;
+  const socket = new WebSocket(wsUrl);
+
+  socket.onopen = () => {
+    console.log("Connected to job location WebSocket for job #" + jobId);
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Broadcast from server:", data);
+    // e.g. update a map marker or show the last known address
+  };
+
+  socket.onclose = () => {
+    console.log("WebSocket disconnected for job #" + jobId);
+  };
+
+  // Send location every 5 seconds
+  setInterval(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const payload = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude
+        };
+        socket.send(JSON.stringify(payload));
+      });
+    }
+  }, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+.git
+node_modules
+__pycache__
+
+# Ignore specific directories
+paybot/
+**/paybot/
+**/paeshift-frontend/
+chatbot/chat_model/
+chatbot/*.pickle
+chatbot/tokenizer.pickle
+chatbot/label_encoder.pickle

@@ -1,0 +1,52 @@
+node_modules
+
+local_settings.pyc
+
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VSCode settings
+.vscode/
+
+# macOS + Linux + Windows system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+
+
+node_modules/
+
+# Ignore specific directories
+paybot/
+**/paybot/
+chatapp/
+chatapp/
+**/chatbot/
+**/chatapp/
+# **/paeshift-frontend/
+chatbot/chat_model/
+chatbot/*.pickle
+chatbot/tokenizer.pickle
+chatbot/label_encoder.pickle
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.
+# Virtual environments
+.venv/
+env/
+venv/
+eb-env-py310/

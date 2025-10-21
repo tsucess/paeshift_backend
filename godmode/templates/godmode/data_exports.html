@@ -1,0 +1,234 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Data Exports - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Data Exports</h1>
+    <div>
+        <a href="{% url 'godmode:create_export_config' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Export Configuration
+        </a>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'godmode:data_exports' %}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="model_name" class="form-label">Model</label>
+                        <select class="form-select" id="model_name" name="model_name">
+                            <option value="">All Models</option>
+                            {% for model in available_models %}
+                            <option value="{{ model }}" {% if filters.model_name == model %}selected{% endif %}>
+                                {{ model }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% if request.user.is_superuser %}
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="created_by_id" class="form-label">Created By</label>
+                        <select class="form-select" id="created_by_id" name="created_by_id">
+                            <option value="">All Users</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if filters.created_by_id == user.id|stringformat:"i" %}selected{% endif %}>
+                                {{ user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-filter"></i> Apply Filters
+                </button>
+                <a href="{% url 'godmode:data_exports' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Export Configurations -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Export Configurations</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Model</th>
+                        <th>Fields</th>
+                        <th>Created By</th>
+                        <th>Created</th>
+                        <th>Last Used</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for config in configs %}
+                    <tr>
+                        <td>{{ config.name }}</td>
+                        <td>{{ config.model_name }}</td>
+                        <td>{{ config.fields|length }} fields</td>
+                        <td>
+                            {% if config.created_by %}
+                            <a href="{% url 'godmode:user_detail' config.created_by.id %}">
+                                {{ config.created_by.username }}
+                            </a>
+                            {% else %}
+                            System
+                            {% endif %}
+                        </td>
+                        <td>{{ config.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if config.last_used %}
+                            {{ config.last_used|date:"M d, Y H:i" }}
+                            {% else %}
+                            Never
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'godmode:run_export' config.id %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-download"></i> Export
+                            </a>
+                            <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#configModal{{ config.id }}">
+                                <i class="bi bi-info-circle"></i> Details
+                            </button>
+                            
+                            <!-- Config Details Modal -->
+                            <div class="modal fade" id="configModal{{ config.id }}" tabindex="-1" aria-labelledby="configModalLabel{{ config.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="configModalLabel{{ config.id }}">Export Configuration Details</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <strong>Name:</strong> {{ config.name }}
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Description:</strong>
+                                                <p>{{ config.description|default:"No description provided." }}</p>
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Model:</strong> {{ config.model_name }}
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Fields:</strong>
+                                                <ul>
+                                                    {% for field in config.fields %}
+                                                    <li>{{ field }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% if config.filters %}
+                                            <div class="mb-3">
+                                                <strong>Filters:</strong>
+                                                <pre class="bg-light p-3">{{ config.filters|pprint }}</pre>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="{% url 'godmode:run_export' config.id %}" class="btn btn-success">
+                                                <i class="bi bi-download"></i> Run Export
+                                            </a>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No export configurations found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Exports -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Recent Exports</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Configuration</th>
+                        <th>Status</th>
+                        <th>Rows</th>
+                        <th>Created By</th>
+                        <th>Created</th>
+                        <th>Completed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for export in exports %}
+                    <tr>
+                        <td>{{ export.file_name }}</td>
+                        <td>
+                            {% if export.config %}
+                            {{ export.config.name }}
+                            {% else %}
+                            --
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ export.status }}">
+                                {{ export.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ export.row_count }}</td>
+                        <td>
+                            {% if export.created_by %}
+                            <a href="{% url 'godmode:user_detail' export.created_by.id %}">
+                                {{ export.created_by.username }}
+                            </a>
+                            {% else %}
+                            System
+                            {% endif %}
+                        </td>
+                        <td>{{ export.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            {% if export.completed_at %}
+                            {{ export.completed_at|date:"M d, Y H:i" }}
+                            {% else %}
+                            --
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No recent exports</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

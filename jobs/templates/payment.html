@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Payment</title>
+  <script>
+    async function initiatePayment() {
+      const total = document.getElementById("total").value;
+      const reservationCode = document.getElementById("reservation_code").value;
+      const firstName = document.getElementById("first_name").value;
+      const lastName = document.getElementById("last_name").value;
+      const phone = document.getElementById("phone").value;
+      const paymentMethod = document.getElementById("payment_method").value;
+
+      try {
+        const response = await fetch("/api/payments/initiate-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            total: total,
+            reservation_code: reservationCode,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone,
+            payment_method: paymentMethod
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log("API Response:", data);
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+        } else {
+          alert("Error: " + (data.error || "Unknown error"));
+        }
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        alert("Request failed. Check console for details.");
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>Initiate Payment</h1>
+  <form onsubmit="event.preventDefault(); initiatePayment();">
+    <label for="total">Total (Naira):</label>
+    <input type="number" step="0.01" id="total" required /><br/><br/>
+    
+    <label for="reservation_code">Reservation Code:</label>
+    <input type="text" id="reservation_code" required /><br/><br/>
+    
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" required /><br/><br/>
+    
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" required /><br/><br/>
+    
+    <label for="phone">Phone:</label>
+    <input type="text" id="phone" required /><br/><br/>
+
+    <label for="payment_method">Choose Payment Method:</label>
+    <select id="payment_method" required>
+      <option value="paystack">Paystack</option>
+      <option value="flutterwave">Flutterwave</option>
+    </select><br/><br/>
+    
+    <button type="submit">Pay Now</button>
+  </form>
+</body>
+</html>

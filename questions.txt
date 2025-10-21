@@ -1,0 +1,138 @@
+# Practical, Day-to-Day Scenario Questions
+
+- What should happen if a job is posted for 10 applicants, but only 3 apply and the job date passes?
+- If a client wants to extend the job date because not enough applicants have been found, what is the process?
+- How do you handle a situation where an applicant is accepted but cancels at the last minute—can the job be quickly reopened?
+- If a client accidentally selects the wrong applicant, can they undo or change their selection before the job starts?
+- What happens if an applicant is late or leaves early—how is attendance tracked and how does it affect payment?
+- If a job is completed but the client is unsatisfied with the work, what is the review or dispute process?
+- How do you handle jobs that require applicants to bring their own equipment or materials—who is responsible for loss or damage?
+- If a client wants to hire the same applicant for another job, is there a quick rehire or favorite feature?
+- What is the process if a job is cancelled due to weather or unforeseen events—are applicants compensated?
+- How are applicants notified of last-minute job openings or urgent requests?
+- If a job is posted in the wrong location, can it be edited after applicants have already applied?
+- What happens if a client or applicant loses access to their account (e.g., forgot password, locked out) while a job is active?
+- How do you handle jobs that require applicants to check in/out on-site (e.g., QR code, supervisor signature)?
+- If a client or applicant wants to change their contact information, how is this updated for all active jobs?
+- What is the process for following up with clients and applicants after a job is completed (e.g., feedback, ratings, future offers)?
+
+What should happen if a job is posted for 5 applicants, but only 2 applicants are selected and the job date passes (job is now closed)?
+
+Should the job be automatically marked as "closed" or "incomplete"?
+Should the client be notified that the job was not fully staffed?
+Should the remaining open positions be re-posted or archived?
+Should the 2 selected applicants still be paid and marked as completed, or does the job require all 5 to proceed?
+How do you handle payments and refunds in this scenario?
+
+If the client prepaid for 5 applicants but only 2 worked, is there an automatic refund or credit for the unfilled positions?
+How is the payment status updated for partially filled jobs?
+What notifications or follow-up actions should occur?
+
+Should the client receive a summary or feedback request after the job date?
+Should applicants who were not selected or not assigned be notified?
+How is job status tracked in your system?
+
+Do you have statuses like "partially filled", "completed", "expired", or "cancelled"?
+Should jobs with unfilled positions be flagged for admin review?
+
+# Production & Real-World Scenario Questions for Job Platform
+
+## Job & Application Scenarios
+1. What happens if a job is marked as "completed" but not all applicants have marked themselves as "shown up" or provided feedback?
+2. If a job is "partially paid" (PaymentStatus.PARTIAL), how is the remaining payment handled? Are applicants notified?
+3. How do you handle a situation where a client tries to cancel a job that already has accepted applicants or is "ongoing"?
+4. If a job is "held in escrow" (PaymentStatus.HELD) due to a dispute, what triggers the release of funds? Who decides?
+5. What if a job is set as "inactive" before the scheduled date? Are all applicants notified and is payment refunded automatically?
+6. If a job is "recurring" (has recurring_days), how are missed or skipped days handled for both client and applicants?
+7. How do you handle jobs where the client changes the job details (rate, date, location) after applicants have already applied or been accepted?
+
+## Applicant & Profile Scenarios
+8. If an applicant's profile is missing key information (skills, location, experience), are they restricted from applying to certain jobs?
+9. How do you handle applicants who repeatedly withdraw after being accepted, or who are marked as "no show"?
+10. If an applicant is accepted for multiple jobs that overlap in time, is there a conflict warning or restriction?
+
+## Payment & Wallet Scenarios
+11. What happens if a payment fails after a job is completed? Are applicants paid from platform funds, or is payment retried?
+12. If a client overpays or underpays (e.g., changes applicants_needed after payment), how is the wallet balance adjusted?
+13. How are refunds processed for jobs that are cancelled after payment but before completion?
+
+## Dispute & Resolution Scenarios
+14. If a dispute is opened for a job, is payment always held in escrow? What if the dispute is not resolved before the job's scheduled end?
+15. Who can resolve a dispute (admin, client, applicant), and what actions are triggered on resolution (e.g., payment release, rating adjustment)?
+16. How are repeat dispute filers (clients or applicants) flagged or handled by the system?
+
+## Notification & Communication Scenarios
+17. Are notifications sent for every status change (job, application, payment, dispute)? Can users opt out of certain notifications?
+18. If a job is edited or cancelled, are all affected users (applicants, client) notified in real time?
+
+## Analytics & Admin Scenarios
+19. Can admins see metrics on job fill rates, dispute frequency, or payment issues? Are there automated alerts for abnormal patterns?
+20. How are jobs or users flagged for manual review (e.g., frequent cancellations, payment issues, disputes)?
+
+## Additional Real-World Scenarios
+21. What happens if a client or applicant is banned or deactivated while they have active jobs or applications?
+22. How do you handle jobs that require background checks or document uploads before applicants can be accepted?
+23. If a job is posted in the wrong category or with incorrect details, can it be edited after applicants have applied?
+24. What if a payment provider (e.g., Paystack, Flutterwave) is down during a critical transaction?
+25. How are platform fees and service charges communicated to users before and after job completion?
+26. If a job is cross-posted to multiple locations or categories, how are applications managed and deduplicated?
+27. How do you handle time zone differences for remote or international jobs?
+28. What happens if a client or applicant requests data deletion (GDPR/CCPA compliance) while they have active or historical jobs?
+29. How are fraudulent jobs or scam applicants detected and handled by the system?
+30. What is the process for escalating unresolved disputes to legal or third-party mediation?
+
+## Edge Case & Advanced Workflow Scenarios
+31. What happens if a job is accidentally deleted after applicants have been accepted or paid?
+32. How do you handle duplicate job postings by the same client within a short time frame?
+33. If an applicant is blacklisted by multiple clients, is there an automated review or appeal process?
+34. How are jobs with multiple shifts or split schedules managed for both applicants and clients?
+35. What if a client wants to rehire a previous applicant for a new job—can they do so directly?
+36. How do you handle jobs that require group applications (e.g., teams or pairs of applicants)?
+37. If a job is paused (e.g., due to weather or external events), how are applicants and payments managed?
+38. What is the process if a client disputes the quality of work after payment has been released?
+39. How do you handle jobs that span multiple locations or require travel—are travel costs managed in the platform?
+40. If a user (client or applicant) changes their contact information, how is this updated across all active and historical records?
+41. How are platform-wide outages or maintenance windows communicated to users with active jobs or applications?
+42. What happens if a job is flagged as inappropriate or violates platform policies—who reviews and what actions are taken?
+43. How do you handle jobs that require real-time check-in/check-out or GPS verification for attendance?
+44. If a client or applicant passes away or becomes incapacitated, what is the process for closing or transferring their account and jobs?
+45. How are tax documents, invoices, or payment receipts generated and delivered to users for completed jobs?
+46. What is the escalation path for unresolved technical issues affecting job posting, application, or payment flows?
+47. How do you handle jobs that require confidentiality agreements or NDAs before applicants can view details or apply?
+48. If a job is posted in a new or unsupported category, how is this reviewed and approved before going live?
+49. How are platform updates or new features rolled out to users, and how is feedback collected?
+50. What is the process for handling mass cancellations (e.g., due to a natural disaster or emergency) affecting many jobs at once?
+51. How do you handle jobs that require equipment or materials provided by the client or applicant? Who is responsible for loss or damage?
+52. What happens if a job is completed but the client or applicant disputes the hours worked or attendance?
+53. How are language barriers or accessibility needs managed for jobs and communications on the platform?
+54. If a client or applicant is underage or otherwise ineligible, how is this detected and handled?
+55. How do you handle jobs that require platform-provided insurance or liability coverage?
+56. What is the process for archiving or deleting old jobs, applications, and user data for performance and compliance?
+57. How are recurring or subscription-based jobs managed, billed, and tracked over time?
+58. What happens if a client or applicant requests a feature or reports a bug—how is this tracked and prioritized?
+59. How do you handle jobs that require multi-stage approval (e.g., background check, interview, training) before applicants are accepted?
+60. What is the process for onboarding new clients and applicants to ensure they understand platform rules and best practices?
+
+## Compliance, Legal, and Operational Scenarios
+61. How do you handle jobs that require multiple rounds of approval (e.g., client, admin, third-party) before applicants can start?
+62. What happens if a job is posted with a start date in the past—can it be edited, or is it automatically flagged?
+63. How are jobs with sensitive or regulated content (e.g., healthcare, finance, minors) reviewed and managed for compliance?
+64. If a client or applicant is involved in legal action related to a job, how is data preserved and shared with authorities?
+65. How do you handle jobs that require platform-mediated communication only (no direct contact until hired)?
+66. What is the process if a client or applicant is reported for harassment, discrimination, or other serious violations?
+67. How are jobs that require physical presence verified (e.g., QR code check-in, supervisor approval)?
+68. If a job is part of a government or grant-funded program, how are reporting and compliance requirements managed?
+69. How do you handle jobs that span multiple currencies or require international payments and tax compliance?
+70. What happens if a platform integration (e.g., background check, payment gateway, messaging) fails during a critical workflow?
+71. How are jobs with strict confidentiality or intellectual property requirements managed and enforced?
+72. If a client or applicant requests a copy of all their data (data portability), how is this fulfilled securely?
+73. How do you handle jobs that require ongoing performance tracking or post-completion follow-up (e.g., reviews, audits)?
+74. What is the process for handling anonymous or whistleblower job postings or applications?
+75. How are jobs that require platform-provided training or certification managed, tracked, and enforced?
+76. If a job is posted as "invite-only" or private, how are invitations managed and tracked?
+77. How do you handle jobs that require multi-party collaboration (e.g., multiple clients, agencies, or teams)?
+78. What is the process for handling jobs that are paused and then resumed after a long delay?
+79. How are jobs with variable compensation (e.g., bonuses, tips, performance pay) managed and paid out?
+80. What happens if a client or applicant is subject to sanctions, export controls, or other legal restrictions?
+
+# Add more scenario-based questions as needed for your production planning.

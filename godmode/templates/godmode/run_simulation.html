@@ -1,0 +1,463 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Run Simulation - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Run Simulation</h1>
+    <p class="text-muted">Select a simulation type and configure parameters to run a simulation.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Simulation Configuration</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'godmode:run_simulation' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="simulation_type" class="form-label">Simulation Type</label>
+                        <select class="form-select" id="simulation_type" name="simulation_type" required>
+                            <option value="">Select a simulation type</option>
+                            {% for sim_type, sim_name in simulation_types %}
+                            <option value="{{ sim_type }}">{{ sim_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Parameters for different simulation types -->
+                    <div id="admin_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Admin Registration Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="admin_count" class="form-label">Number of Admins</label>
+                                    <input type="number" class="form-control" id="admin_count" name="count" value="1" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="admin_password" class="form-label">Password</label>
+                                    <input type="text" class="form-control" id="admin_password" name="password" value="password123">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="client_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Client Registration Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="client_count" class="form-label">Number of Clients</label>
+                                    <input type="number" class="form-control" id="client_count" name="count" value="2" min="1" max="20">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="client_password" class="form-label">Password</label>
+                                    <input type="text" class="form-control" id="client_password" name="password" value="password123">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="applicant_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Applicant Registration Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="applicant_count" class="form-label">Number of Applicants</label>
+                                    <input type="number" class="form-control" id="applicant_count" name="count" value="5" min="1" max="50">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="applicant_password" class="form-label">Password</label>
+                                    <input type="text" class="form-control" id="applicant_password" name="password" value="password123">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="job_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Job Creation Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="job_client_count" class="form-label">Number of Clients</label>
+                                    <input type="number" class="form-control" id="job_client_count" name="client_count" value="2" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="jobs_per_client" class="form-label">Jobs per Client</label>
+                                    <input type="number" class="form-control" id="jobs_per_client" name="jobs_per_client" value="3" min="1" max="10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="application_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Job Application Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="app_applicant_count" class="form-label">Number of Applicants</label>
+                                    <input type="number" class="form-control" id="app_applicant_count" name="applicant_count" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="applications_per_applicant" class="form-label">Applications per Applicant</label>
+                                    <input type="number" class="form-control" id="applications_per_applicant" name="applications_per_applicant" value="2" min="1" max="10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="payment_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Payment Processing Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="payment_count" class="form-label">Number of Payments</label>
+                                    <input type="number" class="form-control" id="payment_count" name="count" value="3" min="1" max="20">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="payment_method" class="form-label">Payment Method</label>
+                                    <select class="form-select" id="payment_method" name="payment_method">
+                                        <option value="both">Both</option>
+                                        <option value="paystack">Paystack</option>
+                                        <option value="flutterwave">Flutterwave</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="success_rate" class="form-label">Success Rate</label>
+                                    <input type="number" class="form-control" id="success_rate" name="success_rate" value="0.8" min="0" max="1" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="dispute_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Dispute Management Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="dispute_count" class="form-label">Number of Disputes</label>
+                                    <input type="number" class="form-control" id="dispute_count" name="count" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="resolution_rate" class="form-label">Resolution Rate</label>
+                                    <input type="number" class="form-control" id="resolution_rate" name="resolution_rate" value="0.7" min="0" max="1" step="0.1">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="client_favor_rate" class="form-label">Client Favor Rate</label>
+                                    <input type="number" class="form-control" id="client_favor_rate" name="client_favor_rate" value="0.5" min="0" max="1" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="location_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Location Streams Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="user_count" class="form-label">Number of Users</label>
+                                    <input type="number" class="form-control" id="user_count" name="user_count" value="10" min="1" max="50">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="updates_per_user" class="form-label">Updates per User</label>
+                                    <input type="number" class="form-control" id="updates_per_user" name="updates_per_user" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="webhook_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Payment Webhook Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="webhook_payment_method" class="form-label">Payment Method</label>
+                                    <select class="form-select" id="webhook_payment_method" name="payment_method">
+                                        <option value="paystack">Paystack</option>
+                                        <option value="flutterwave">Flutterwave</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="webhook_success" class="form-label">Success</label>
+                                    <select class="form-select" id="webhook_success" name="success">
+                                        <option value="true">Success</option>
+                                        <option value="false">Failure</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="full_params" class="simulation-params" style="display: none;">
+                        <h5 class="mt-4 mb-3">Full End-to-End Simulation Parameters</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="full_admin_count" class="form-label">Admin Count</label>
+                                    <input type="number" class="form-control" id="full_admin_count" name="admin_count" value="1" min="1" max="5">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="full_client_count" class="form-label">Client Count</label>
+                                    <input type="number" class="form-control" id="full_client_count" name="client_count" value="2" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="full_applicant_count" class="form-label">Applicant Count</label>
+                                    <input type="number" class="form-control" id="full_applicant_count" name="applicant_count" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="full_jobs_per_client" class="form-label">Jobs per Client</label>
+                                    <input type="number" class="form-control" id="full_jobs_per_client" name="jobs_per_client" value="3" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="full_applications_per_applicant" class="form-label">Applications per Applicant</label>
+                                    <input type="number" class="form-control" id="full_applications_per_applicant" name="applications_per_applicant" value="2" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="full_payment_success_rate" class="form-label">Payment Success Rate</label>
+                                    <input type="number" class="form-control" id="full_payment_success_rate" name="payment_success_rate" value="0.8" min="0" max="1" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-play-circle"></i> Run Simulation
+                        </button>
+                        <a href="{% url 'godmode:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Simulation Information</h5>
+            </div>
+            <div class="card-body">
+                <div id="simulation_info">
+                    <p class="text-muted">Select a simulation type to see information about it.</p>
+                </div>
+                
+                <div id="admin_info" class="simulation-info" style="display: none;">
+                    <h5>Admin Registration</h5>
+                    <p>Simulates the registration of admin users with different roles.</p>
+                    <ul>
+                        <li>Creates admin users with random details</li>
+                        <li>Assigns appropriate permissions</li>
+                        <li>Creates admin profiles</li>
+                    </ul>
+                </div>
+                
+                <div id="client_info" class="simulation-info" style="display: none;">
+                    <h5>Client Registration</h5>
+                    <p>Simulates the registration of client users with profiles.</p>
+                    <ul>
+                        <li>Creates client users with random details</li>
+                        <li>Creates client profiles with locations</li>
+                        <li>Sets up payment methods</li>
+                    </ul>
+                </div>
+                
+                <div id="applicant_info" class="simulation-info" style="display: none;">
+                    <h5>Applicant Registration</h5>
+                    <p>Simulates the registration of applicant users with profiles and location history.</p>
+                    <ul>
+                        <li>Creates applicant users with random details</li>
+                        <li>Creates applicant profiles with skills and experience</li>
+                        <li>Generates location history</li>
+                    </ul>
+                </div>
+                
+                <div id="job_info" class="simulation-info" style="display: none;">
+                    <h5>Job Creation</h5>
+                    <p>Simulates the creation of jobs by client users.</p>
+                    <ul>
+                        <li>Creates jobs with random details</li>
+                        <li>Sets job locations and requirements</li>
+                        <li>Handles geocoding of addresses</li>
+                    </ul>
+                </div>
+                
+                <div id="application_info" class="simulation-info" style="display: none;">
+                    <h5>Job Application</h5>
+                    <p>Simulates job applications from applicants to jobs.</p>
+                    <ul>
+                        <li>Creates applications with random details</li>
+                        <li>Handles matching algorithms</li>
+                        <li>Updates job and applicant statuses</li>
+                    </ul>
+                </div>
+                
+                <div id="payment_info" class="simulation-info" style="display: none;">
+                    <h5>Payment Processing</h5>
+                    <p>Simulates payment processing for jobs, including webhook callbacks.</p>
+                    <ul>
+                        <li>Creates payment records</li>
+                        <li>Simulates payment gateway interactions</li>
+                        <li>Tests webhook callbacks</li>
+                        <li>Handles payment status updates</li>
+                    </ul>
+                </div>
+                
+                <div id="dispute_info" class="simulation-info" style="display: none;">
+                    <h5>Dispute Management</h5>
+                    <p>Simulates the creation and resolution of disputes between clients and applicants.</p>
+                    <ul>
+                        <li>Creates dispute records</li>
+                        <li>Assigns disputes to admins</li>
+                        <li>Simulates dispute resolution process</li>
+                    </ul>
+                </div>
+                
+                <div id="location_info" class="simulation-info" style="display: none;">
+                    <h5>Location Streams</h5>
+                    <p>Simulates location data for users, including home addresses, job locations, and live location history.</p>
+                    <ul>
+                        <li>Updates home addresses in user profiles</li>
+                        <li>Creates location history entries</li>
+                        <li>Updates job locations</li>
+                    </ul>
+                </div>
+                
+                <div id="webhook_info" class="simulation-info" style="display: none;">
+                    <h5>Payment Webhook</h5>
+                    <p>Tests the payment webhook implementation without requiring an actual payment gateway.</p>
+                    <ul>
+                        <li>Simulates webhook callbacks</li>
+                        <li>Tests success and failure scenarios</li>
+                        <li>Verifies webhook handling</li>
+                    </ul>
+                </div>
+                
+                <div id="full_info" class="simulation-info" style="display: none;">
+                    <h5>Full End-to-End Simulation</h5>
+                    <p>Runs all the individual simulations in sequence to create a complete test environment.</p>
+                    <ul>
+                        <li>Creates admin, client, and applicant users</li>
+                        <li>Creates jobs and applications</li>
+                        <li>Processes payments</li>
+                        <li>Generates location data</li>
+                        <li>Creates disputes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Simulations</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for simulation in recent_simulations %}
+                    <a href="{% url 'godmode:simulation_detail' simulation.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ simulation.get_simulation_type_display }}</h6>
+                            <small class="text-muted">{{ simulation.started_at|date:"M d, H:i" }}</small>
+                        </div>
+                        <p class="mb-1">
+                            <span class="badge badge-status {{ simulation.status }}">
+                                {{ simulation.status|title }}
+                            </span>
+                        </p>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item">
+                        <p class="mb-0 text-muted">No recent simulations</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const simulationTypeSelect = document.getElementById('simulation_type');
+        const simulationParams = document.querySelectorAll('.simulation-params');
+        const simulationInfo = document.querySelectorAll('.simulation-info');
+        
+        // Hide all parameter sections initially
+        simulationParams.forEach(function(section) {
+            section.style.display = 'none';
+        });
+        
+        // Hide all info sections initially
+        simulationInfo.forEach(function(section) {
+            section.style.display = 'none';
+        });
+        
+        // Show parameter section based on selected simulation type
+        simulationTypeSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+            
+            // Hide all parameter sections
+            simulationParams.forEach(function(section) {
+                section.style.display = 'none';
+            });
+            
+            // Hide all info sections
+            simulationInfo.forEach(function(section) {
+                section.style.display = 'none';
+            });
+            
+            // Show selected parameter section
+            if (selectedType) {
+                const paramSection = document.getElementById(`${selectedType}_params`);
+                if (paramSection) {
+                    paramSection.style.display = 'block';
+                }
+                
+                // Show selected info section
+                const infoSection = document.getElementById(`${selectedType}_info`);
+                if (infoSection) {
+                    infoSection.style.display = 'block';
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

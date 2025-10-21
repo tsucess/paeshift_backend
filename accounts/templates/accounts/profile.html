@@ -1,0 +1,108 @@
+{% comment %} {% extends "base.html" %} {% endcomment %}
+{% block content %}
+  <h1>Update Your Profile</h1>
+
+  <form id="profileForm" enctype="multipart/form-data">
+    <input type="hidden" id="user_id" value="{{ user.id }}">
+
+    <div>
+      <label>First Name:</label>
+      <input type="text" id="first_name" value="{{ user.first_name }}">
+    </div>
+
+    <div>
+      <label>Last Name:</label>
+      <input type="text" id="last_name" value="{{ user.last_name }}">
+    </div>
+
+    <div>
+      <label>Bio:</label>
+      <textarea id="bio">{{ profile.bio }}</textarea>
+    </div>
+
+    <div>
+      <label>Location:</label>
+      <input type="text" id="location" value="{{ profile.location }}">
+    </div>
+
+    <div>
+      <label>Phone:</label>
+      <input type="tel" id="phone_number" value="{{ profile.phone_number }}">
+    </div>
+
+    <div>
+      <label>Profile Picture:</label><br>
+      {% if profile.profile_pic %}
+        <img id="profilePicPreview" src="{{ profile.profile_pic.url }}" width="100"><br>
+      {% else %}
+        <img id="profilePicPreview" style="display: none;" width="100"><br>
+      {% endif %}
+      <input type="file" id="profile_picture" accept="image/*">
+    </div>
+
+    <button type="button" onclick="submitForm()">Save</button>
+  </form>
+
+  <div id="responseMessage" style="margin-top: 1em;"></div>
+
+  <script>
+    async function submitForm() {
+      const userId = document.getElementById('user_id').value;
+      const form = document.getElementById('profileForm');
+      const responseDiv = document.getElementById('responseMessage');
+      responseDiv.textContent = '';
+
+      const formData = new FormData();
+      formData.append('user_id', userId);
+      ['first_name', 'last_name', 'bio', 'location', 'phone_number'].forEach(field => {
+        const input = document.getElementById(field);
+        if (input && input.value.trim()) {
+          formData.append(field, input.value.trim());
+        }
+      });
+
+      const fileInput = document.getElementById('profile_picture');
+      if (fileInput.files.length > 0) {
+        formData.append('profile_picture', fileInput.files[0]);
+      }
+
+      try {
+        const res = await fetch('/jobchat/profile/update/3', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: formData
+        });
+
+        const text = await res.text();
+        let result;
+
+        try {
+          result = JSON.parse(text);
+        } catch (e) {
+          throw new Error("Server returned invalid JSON");
+        }
+
+        if (res.ok) {
+          responseDiv.innerHTML = `<span style="color: green;">Profile updated successfully!</span>`;
+          if (result.profile_pic_url) {
+            const img = document.getElementById('profilePicPreview');
+            img.src = result.profile_pic_url;
+            img.style.display = 'block';
+          }
+        } else {
+          responseDiv.innerHTML = `<span style="color: red;">Error: ${result.error || result.detail || 'Something went wrong'}</span>`;
+        }
+      } catch (err) {
+        console.error(err);
+        responseDiv.innerHTML = `<span style="color: red;">Network error: ${err.message}</span>`;
+      }
+    }
+
+    function getCookie(name) {
+      const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return match ? match.pop() : '';
+    }
+  </script>
+{% endblock %}

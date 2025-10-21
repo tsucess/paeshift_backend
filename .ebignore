@@ -1,0 +1,44 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+.env
+venv/
+eb-env-py310/
+node_modules/
+.DS_Store
+.idea/
+.vscode/
+.git/
+.gitignore
+*.bak
+*.swp
+*.swo
+*.egg-info/
+staticfiles/
+uploads/
+
+# Deployment cleanup
+.elasticbeanstalk/deployments/
+*.zip
+
+# Test and debug files
+test_*.py
+debug_*.py
+diagnose_*.py
+send_test_*.py
+
+# Development scripts
+deploy*.ps1
+deploy*.bat
+build-react.*
+commit.bat
+
+# Documentation
+README.md
+DEPLOYMENT_GUIDE.md
+MANUAL_DEPLOYMENT_STEPS.md
+workflow.md

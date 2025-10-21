@@ -1,0 +1,469 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Webhook Queue Dashboard{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .stats-card {
+        background-color: #fff;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        margin-bottom: 20px;
+        padding: 15px;
+    }
+    .stats-header {
+        border-bottom: 1px solid #eee;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    .stat-item {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .stat-label {
+        color: #666;
+        font-size: 14px;
+    }
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .actions-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .btn {
+        background-color: #79aec8;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        padding: 8px 16px;
+    }
+    .btn-danger {
+        background-color: #c84747;
+    }
+    .btn-warning {
+        background-color: #c89b47;
+    }
+    .btn-success {
+        background-color: #47c85e;
+    }
+    .loading {
+        display: none;
+        margin-left: 10px;
+    }
+    .alert {
+        border-radius: 4px;
+        margin-bottom: 20px;
+        padding: 15px;
+    }
+    .alert-success {
+        background-color: #dff0d8;
+        border: 1px solid #d6e9c6;
+        color: #3c763d;
+    }
+    .alert-danger {
+        background-color: #f2dede;
+        border: 1px solid #ebccd1;
+        color: #a94442;
+    }
+    .alert-warning {
+        background-color: #fcf8e3;
+        border: 1px solid #faebcc;
+        color: #8a6d3b;
+    }
+    .webhook-table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .webhook-table th, .webhook-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .webhook-table th {
+        background-color: #f2f2f2;
+    }
+    .webhook-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .webhook-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    .refresh-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .last-updated {
+        color: #666;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Webhook Queue Dashboard</h1>
+    
+    <div class="refresh-container">
+        <div>
+            <button id="refresh-btn" class="btn">Refresh Data</button>
+            <span id="loading" class="loading">Loading...</span>
+        </div>
+        <div class="last-updated">
+            Last updated: <span id="last-updated">{{ timestamp }}</span>
+        </div>
+    </div>
+    
+    <div id="alert-container"></div>
+    
+    <div class="actions-container">
+        <button id="process-batch-btn" class="btn btn-success">Process Batch</button>
+        <button id="cleanup-btn" class="btn btn-warning">Cleanup Queue</button>
+        <button id="retry-failed-btn" class="btn">Retry Failed</button>
+    </div>
+    
+    <div class="stats-card">
+        <div class="stats-header">
+            <h2>Queue Statistics</h2>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="queued-count">{{ stats.queued|default:"0" }}</div>
+                <div class="stat-label">Queued</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="processing-count">{{ stats.processing|default:"0" }}</div>
+                <div class="stat-label">Processing</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="completed-count">{{ stats.completed|default:"0" }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="failed-count">{{ stats.failed|default:"0" }}</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="enqueued-total">{{ stats.enqueued_total|default:"0" }}</div>
+                <div class="stat-label">Total Enqueued</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="completed-total">{{ stats.completed_total|default:"0" }}</div>
+                <div class="stat-label">Total Completed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="failed-total">{{ stats.failed_total|default:"0" }}</div>
+                <div class="stat-label">Total Failed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="retried-total">{{ stats.retried_total|default:"0" }}</div>
+                <div class="stat-label">Total Retried</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats-card">
+        <div class="stats-header">
+            <h2>Recent Failed Webhooks</h2>
+        </div>
+        <table class="webhook-table" id="failed-webhooks-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Reference</th>
+                    <th>Payment Method</th>
+                    <th>Failed At</th>
+                    <th>Attempts</th>
+                    <th>Error</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="7" class="text-center">Loading failed webhooks...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="stats-card">
+        <div class="stats-header">
+            <h2>Recent Completed Webhooks</h2>
+        </div>
+        <table class="webhook-table" id="completed-webhooks-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Reference</th>
+                    <th>Payment Method</th>
+                    <th>Completed At</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5" class="text-center">Loading completed webhooks...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const refreshBtn = document.getElementById('refresh-btn');
+        const processBatchBtn = document.getElementById('process-batch-btn');
+        const cleanupBtn = document.getElementById('cleanup-btn');
+        const retryFailedBtn = document.getElementById('retry-failed-btn');
+        const loadingEl = document.getElementById('loading');
+        const alertContainer = document.getElementById('alert-container');
+        const lastUpdatedEl = document.getElementById('last-updated');
+        
+        // Stats elements
+        const queuedCountEl = document.getElementById('queued-count');
+        const processingCountEl = document.getElementById('processing-count');
+        const completedCountEl = document.getElementById('completed-count');
+        const failedCountEl = document.getElementById('failed-count');
+        const enqueuedTotalEl = document.getElementById('enqueued-total');
+        const completedTotalEl = document.getElementById('completed-total');
+        const failedTotalEl = document.getElementById('failed-total');
+        const retriedTotalEl = document.getElementById('retried-total');
+        
+        // Tables
+        const failedWebhooksTable = document.getElementById('failed-webhooks-table').querySelector('tbody');
+        const completedWebhooksTable = document.getElementById('completed-webhooks-table').querySelector('tbody');
+        
+        // Functions
+        function showLoading() {
+            loadingEl.style.display = 'inline';
+        }
+        
+        function hideLoading() {
+            loadingEl.style.display = 'none';
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        function updateStats(stats) {
+            queuedCountEl.textContent = stats.queued || 0;
+            processingCountEl.textContent = stats.processing || 0;
+            completedCountEl.textContent = stats.completed || 0;
+            failedCountEl.textContent = stats.failed || 0;
+            enqueuedTotalEl.textContent = stats.enqueued_total || 0;
+            completedTotalEl.textContent = stats.completed_total || 0;
+            failedTotalEl.textContent = stats.failed_total || 0;
+            retriedTotalEl.textContent = stats.retried_total || 0;
+            
+            lastUpdatedEl.textContent = stats.current_time || new Date().toISOString();
+        }
+        
+        function updateFailedWebhooksTable(webhooks) {
+            failedWebhooksTable.innerHTML = '';
+            
+            if (!webhooks || webhooks.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="7" class="text-center">No failed webhooks</td>';
+                failedWebhooksTable.appendChild(row);
+                return;
+            }
+            
+            webhooks.forEach(webhook => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${webhook.webhook_id}</td>
+                    <td>${webhook.reference}</td>
+                    <td>${webhook.payment_method}</td>
+                    <td>${webhook.failed_at}</td>
+                    <td>${webhook.attempts}</td>
+                    <td>${webhook.error}</td>
+                    <td>
+                        <button class="btn btn-sm retry-webhook" data-id="${webhook.webhook_id}">Retry</button>
+                    </td>
+                `;
+                failedWebhooksTable.appendChild(row);
+            });
+            
+            // Add event listeners to retry buttons
+            document.querySelectorAll('.retry-webhook').forEach(button => {
+                button.addEventListener('click', function() {
+                    const webhookId = this.getAttribute('data-id');
+                    retryWebhook(webhookId);
+                });
+            });
+        }
+        
+        function updateCompletedWebhooksTable(webhooks) {
+            completedWebhooksTable.innerHTML = '';
+            
+            if (!webhooks || webhooks.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" class="text-center">No completed webhooks</td>';
+                completedWebhooksTable.appendChild(row);
+                return;
+            }
+            
+            webhooks.forEach(webhook => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${webhook.webhook_id}</td>
+                    <td>${webhook.reference}</td>
+                    <td>${webhook.payment_method}</td>
+                    <td>${webhook.completed_at}</td>
+                    <td>${webhook.result?.status || 'Unknown'}</td>
+                `;
+                completedWebhooksTable.appendChild(row);
+            });
+        }
+        
+        function loadDashboardData() {
+            showLoading();
+            
+            fetch('/admin/payment/webhook-stats/')
+                .then(response => response.json())
+                .then(data => {
+                    updateStats(data.stats);
+                    updateFailedWebhooksTable(data.failed_webhooks);
+                    updateCompletedWebhooksTable(data.completed_webhooks);
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard data:', error);
+                    showAlert('Error loading dashboard data: ' + error.message, 'danger');
+                    hideLoading();
+                });
+        }
+        
+        function processBatch() {
+            showLoading();
+            
+            fetch('/admin/payment/process-batch/', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showAlert(`Processed ${data.success_count + data.failure_count} webhooks: ${data.success_count} succeeded, ${data.failure_count} failed`);
+                    } else {
+                        showAlert('Error processing batch: ' + data.message, 'danger');
+                    }
+                    
+                    // Reload dashboard data
+                    loadDashboardData();
+                })
+                .catch(error => {
+                    console.error('Error processing batch:', error);
+                    showAlert('Error processing batch: ' + error.message, 'danger');
+                    hideLoading();
+                });
+        }
+        
+        function cleanupQueue() {
+            showLoading();
+            
+            fetch('/admin/payment/cleanup-queue/', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showAlert(`Requeued ${data.requeued_stale} stale and ${data.requeued_failed} failed webhooks`);
+                    } else {
+                        showAlert('Error cleaning up queue: ' + data.message, 'danger');
+                    }
+                    
+                    // Reload dashboard data
+                    loadDashboardData();
+                })
+                .catch(error => {
+                    console.error('Error cleaning up queue:', error);
+                    showAlert('Error cleaning up queue: ' + error.message, 'danger');
+                    hideLoading();
+                });
+        }
+        
+        function retryFailedWebhooks() {
+            showLoading();
+            
+            fetch('/admin/payment/retry-failed/', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showAlert(`Requeued ${data.requeued_count} failed webhooks`);
+                    } else {
+                        showAlert('Error retrying failed webhooks: ' + data.message, 'danger');
+                    }
+                    
+                    // Reload dashboard data
+                    loadDashboardData();
+                })
+                .catch(error => {
+                    console.error('Error retrying failed webhooks:', error);
+                    showAlert('Error retrying failed webhooks: ' + error.message, 'danger');
+                    hideLoading();
+                });
+        }
+        
+        function retryWebhook(webhookId) {
+            showLoading();
+            
+            fetch(`/admin/payment/retry-webhook/${webhookId}/`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showAlert(`Requeued webhook ${webhookId}`);
+                    } else {
+                        showAlert('Error retrying webhook: ' + data.message, 'danger');
+                    }
+                    
+                    // Reload dashboard data
+                    loadDashboardData();
+                })
+                .catch(error => {
+                    console.error('Error retrying webhook:', error);
+                    showAlert('Error retrying webhook: ' + error.message, 'danger');
+                    hideLoading();
+                });
+        }
+        
+        // Event listeners
+        refreshBtn.addEventListener('click', loadDashboardData);
+        processBatchBtn.addEventListener('click', processBatch);
+        cleanupBtn.addEventListener('click', cleanupQueue);
+        retryFailedBtn.addEventListener('click', retryFailedWebhooks);
+        
+        // Initial load
+        loadDashboardData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboardData, 30000);
+    });
+</script>
+{% endblock %}

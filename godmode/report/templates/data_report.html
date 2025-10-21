@@ -1,0 +1,561 @@
+{% extends 'index.html' %} {%load static%} {% block body %}
+
+
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+
+        <!-- jQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+        <!-- Popper JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+        <!-- Latest compiled JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        
+
+        <style>
+          body {
+            background-color: #f5f7fa;
+          }
+
+          .logo {
+            width: 25px;
+            height: 25px;
+          }
+
+          .data {
+            font-size: 25px;
+          }
+        </style>
+
+        <div class="container pt-5">
+          <nav class="navbar navbar-expand-sm bg-primary" style="position:sticky; top:0px; z-index:2;">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <button class="btn btn-outline-light launch-modal m-2" data-toggle="modal" data-target="#myModal">
+                  Add Data Widget
+                </button>
+              </li>
+              <li class="nav-item">
+                <button type="button" class="btn btn-outline-light m-2 save">
+                  Save as Template
+                </button>
+              </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item">
+                <button type="button" class="btn btn-outline-light m-2 preview">
+                  View Templates
+                </button>
+              </li>
+              <li>
+                <button type="button" class="btn btn-outline-light m-2 preview clear-all">
+                  Clear Widgets
+                </button>
+              </li>
+              <li>
+                <button class="print btn btn-outline-light m-2">Print Report</button>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="row mt-3">
+              <div class="col card m-2 p-4">
+                <img
+                  class="logo m-auto"
+                  src="https://i.pinimg.com/originals/c6/a0/3f/c6a03faa586528013717c1d580e22165.jpg"
+                  alt=""
+                />
+                <div class="data font-weight-bold m-auto text-secondary sessions">Please Wait</div>
+                <div class="m-auto text-secondary">Sessions</div>
+                <div class="small text-muted m-auto">Last 30 days</div>
+              </div>
+              <div class="col card m-2 p-4">
+                <img
+                  class="logo m-auto"
+                  src="https://i.pinimg.com/originals/c6/a0/3f/c6a03faa586528013717c1d580e22165.jpg"
+                  alt=""
+                />
+                <div class="data font-weight-bold m-auto text-secondary new-users">Please Wait</div>
+                <div class="m-auto text-secondary">New Users</div>
+                <div class="small text-muted m-auto">Last 30 days</div>
+              </div>
+              <div class="col card m-2 p-4">
+                <img
+                  class="logo m-auto"
+                  src="https://i.pinimg.com/originals/c6/a0/3f/c6a03faa586528013717c1d580e22165.jpg"
+                  alt=""
+                />
+                <div class="data font-weight-bold m-auto text-secondary bounce-rate">Please Wait</div>
+                <div class="m-auto text-secondary">Bounce Rate</div>
+                <div class="small text-muted m-auto">Last 30 days</div>
+              </div>
+              <div class="col card m-2 p-4">
+                <img
+                  class="logo m-auto"
+                  src="https://i.pinimg.com/originals/c6/a0/3f/c6a03faa586528013717c1d580e22165.jpg"
+                  alt=""
+                />
+                <div class="data font-weight-bold m-auto text-secondary bounces">
+                  Please Wait
+                </div>
+                <div class="m-auto text-secondary">Bounces</div>
+                <div class="small text-muted m-auto">Last 30 days</div>
+              </div>
+            </div>
+
+          <div class="add-widget-row d-flex justify-content-between" style="flex-wrap: wrap">
+              <div class="card mt-2 mb-2 p-4 graph-1" style="width: 42vw;">
+                  <div>
+                    <div style="float: right">
+                      <button class="edit btn btn-primary" data-toggle="modal" data-target="#myModal">Edit</button>
+                      <button class="delete btn btn-primary" id="delete-1}">Delete</button>
+                    </div>
+                    <div>
+                      <img
+                        src="../static/logos/ga.svg"
+                        alt=""
+                        class="logo mx-auto"
+                      />
+                      <span class="ml-1">Bounce Rate (Last 30 days)</span>
+                    </div>
+                    <!-- <div class="small ml-5 text-muted">Last 30 days</div> -->
+                    <canvas id="chart1"></canvas>
+                  </div>
+                </div>
+                <div class="card mt-2 mb-2 p-4 graph-2" style="width: 42vw;">
+                    <div>
+                      <div style="float: right">
+                        <button class="edit btn btn-primary" data-toggle="modal" data-target="#myModal">Edit</button>
+                        <button class="delete btn btn-primary" id="delete-2">Delete</button>
+                      </div>
+                      <div>
+                        <img
+                          src="../static/logos/ga.svg"
+                          alt=""
+                          class="logo mx-auto"
+                        />
+                        <span class="ml-1">New Users (Last 30 days)</span>
+                      </div>
+                      <!-- <div class="small ml-5 text-muted">Last 30 days</div> -->
+                      <canvas id="chart2"></canvas>
+                    </div>
+                  </div>
+          </div>
+
+          <!-- The Modal -->
+          <div class="modal" id="myModal">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                  <h4 class="modal-title">Add Data Widget</h4>
+                  <button type="button" class="close" data-dismiss="modal">
+                    &times;
+                  </button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label for="name">Widget Name: </label>
+                    <input type="text" class="form-control" id="name" />
+                  </div>
+                  <div class="form-group">
+                    <label for="sel0">Choose Integration</label>
+                    <select class="form-control" id="sel0">
+                        <option value="google-analytics">Google Analytics</option>
+                      <!-- <option value="facebook">Facebook</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="google-analytics">Google Analytics</option>
+                      <option value="google-ads">Google Ads</option> -->
+                    </select>
+                  </div>
+                  <div class="selected-dimensions"></div>
+                  <div class="form-group">
+                    <label for="sel1">Choose Dimension</label>
+                    <select class="form-control" id="sel1">
+                      {% for dimension in dimensions %}
+                      <option value="{{dimension}}">{{dimension}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="selected-metrics"></div>
+                  <div class="form-group">
+                    <select class="form-control" id="sel2">
+                      <option value="add_metric">Add Metric</option>
+                      {% for metric in metrics %}
+                      <option value="{{metric}}">{{metric}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <select class="form-control" id="sel3">
+                      <option value="line">Line Chart</option>
+                      <option value="bar">Bar Chart</option>
+                      <option value="pie">Pie Chart</option>
+                    </select>
+                  </div>
+
+
+                  <!-- Modal footer -->
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-primary add-widget" data-dismiss="modal">
+                      Add
+                    </button>
+                    <button type="button" class="btn btn-primary edit-widget" data-dismiss="modal">
+                      Edit
+                    </button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <script>
+
+
+            let metrics = [];
+            const dimensions = [];
+
+            const addWidgetButton = document.querySelector(".add-widget");
+            const editWidgetButton = document.querySelector(".edit-widget");
+            const addWidgetRow = document.querySelector(".add-widget-row");
+            const selectedMetrics = document.querySelector(".selected-metrics");
+            const selectedDimensions = document.querySelector(".selected-dimensions");
+            const selectDimension = document.querySelector("#sel1");
+            const selectMetrics = document.querySelector("#sel2");
+            const selectChartType = document.querySelector("#sel3");
+            const widgetName = document.querySelector("#name");
+            const launchModal = document.querySelector(".launch-modal");
+            let configs = [];
+            let deletedCharts = [];
+            let charts = [];
+            let chartNumber = 3;
+            let editWidgetNumber;
+
+            $.ajax({
+              url: "/djauthapp/greq",
+              type: "GET",
+              data: {
+                message: "1"
+              },
+              success: function (result) {
+                console.log("result=",result)
+                var labels = Object.values(result["date"]);
+                console.log(labels)
+                let datasets = [{
+                    label: "Bounce Rate",
+                    backgroundColor: "hsl(240, 100%, 50%)",
+                    borderColor: "hsl(240, 100%, 50%)",
+                    data: Object.values(result["bounce_rate"])
+                  }];
+                let data = {
+                  labels: labels,
+                  datasets: datasets
+                };
+                let config = {
+                  type: "line",
+                  data,
+                  options: {}
+                };
+                //charts[0] = new Chart(document.getElementById('chart1'),config);
+                
+                configs.push(config);
+                datasets = [{
+                  label: "New Users",
+                  backgroundColor: "hsl(240, 100%, 50%)",
+                  borderColor: "hsl(240, 100%, 50%)",
+                  data: Object.values(result["new_users"])
+                }];
+                data = {
+                  labels: labels,
+                  datasets: datasets
+                };
+                config = {
+                  type: "line",
+                  data,
+                  options: {}
+                };
+                configs.push(config);
+                configs.forEach((c, i) => {
+                  console.log(chartNumber);
+                  charts[i] = new Chart(document.getElementById(`chart${i + 1}`), c)
+                })
+                console.log(configs);
+                //configs.forEach((config, i) => {
+                //  charts[i] = new Chart(
+                //   document.getElementById(`chart${i + 1}`),
+                //    config
+                //  );
+                //});
+                widgetName.value = "";
+                metrics.splice(0);
+                selectedMetrics.innerHTML = "";
+
+                const deleteButtons = document.querySelectorAll(".delete");
+
+                deletedCharts.forEach(deletedChartNumber => {
+                  document.querySelector(`.graph-${deletedChartNumber}`).style.display =
+                    "none";
+                });
+
+                deleteButtons.forEach((deleteButton, i) => {
+                  deleteButton.addEventListener("click", () => {
+                    document.querySelector(`.graph-${i + 1}`).style.display = "none";
+                    deletedCharts.push(i + 1);
+                  });
+                });
+
+                const editButtons = document.querySelectorAll(".edit");
+                editButtons.forEach((editButton, i) => {
+                  editButton.addEventListener("click", () => {
+                    editWidgetNumber = i + 1;
+                    addWidgetButton.style.display = "none";
+                    editWidgetButton.style.display = "";
+                  });
+                });
+              }
+            });
+
+            $.ajax({
+              url: "/djauthapp/greq",
+              type: "GET",
+              data: {},
+              success: function (result) {
+                console.log("result2=",result);
+                document.querySelector(".new-users").innerHTML = result["new_users"][0];
+                document.querySelector(".bounce-rate").innerHTML = `${result["bounce_rate"][0].toFixed(2)}%`;
+                document.querySelector(".bounces").innerHTML = result["bounces"][0];
+                document.querySelector(".sessions").innerHTML = result["sessions"][0];
+              }
+            });
+            
+
+            const editWidget = chartNumber => {
+              $.ajax({
+                url: "/djauthapp/greq",
+                type: "GET",
+                data: {
+                  metrics: metrics.join(","),
+                  dimension: selectDimension.value
+                },
+                success: function (result) {
+                  console.log(result)
+                  const s = selectDimension.value;
+                  var labels = Object.values(result[s.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return "_" + y.toLowerCase() }).replace(/^_/, "")]);
+                  console.log(labels)
+                  let datasets = [];
+                  let hue = 240;
+                  metrics.forEach(metric => {
+                    let a;
+                    if (selectChartType.value === "pie") {
+                      a = [];
+                      labels.forEach(label => {
+                        a.push(`hsl(${hue}, 100%, 50%`);
+                        hue = (hue + 40) % 360;
+                      });
+                    }
+                    else {
+                      a = `hsl(${hue}, 100%, 50%)`;
+                    }
+                    let s1 = metric;
+                    s1 = s1.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return "_" + y.toLowerCase() }).replace(/^_/, "");
+                    console.log(result[s1]);
+                    datasets.push({
+                      label: metric,
+                      backgroundColor: a,
+                      borderColor: a,
+                      data: Object.values(result[s1])
+                    });
+                    hue = (hue + 40) % 360;
+                  });
+
+                  const data = {
+                    labels: labels,
+                    datasets: datasets
+                  };
+                  const config = {
+                    type: selectChartType.value,
+                    data,
+                    options: {}
+                  };
+                  configs[chartNumber - 1] = config;
+                  charts[chartNumber - 1].destroy();
+                  charts[chartNumber - 1] = new Chart(
+                    document.getElementById(`chart${chartNumber}`),
+                    configs[chartNumber - 1]
+                  );
+                  widgetName.value = "";
+                  metrics.splice(0);
+                  selectedMetrics.innerHTML = "";
+                }
+              });
+
+              
+            };
+
+            const addWidget = chartNumber => {
+              addWidgetRow.innerHTML += `
+        <div class="card mt-2 mb-2 p-4 graph-${chartNumber}" style="width: 42vw;">
+            <div>
+              <div style="float: right">
+                <button class="edit btn btn-primary" data-toggle="modal" data-target="#myModal">Edit</button>
+                <button class="delete btn btn-primary" id="delete-${chartNumber}">Delete</button>
+              </div>
+              <div>
+                <img
+                  src="../static/logos/ga.svg"
+                  alt=""
+                  class="logo mx-auto"
+                />
+                <span class="ml-1">${widgetName.value}</span>
+              </div>
+              <!-- <div class="small ml-5 text-muted">Last 30 days</div> -->
+              <canvas id="chart${chartNumber}"></canvas>
+            </div>
+          </div>`;
+
+              $.ajax({
+                url: "/djauthapp/greq",
+                type: "GET",
+                data: {
+                  metrics: metrics.join(","),
+                  dimension: selectDimension.value
+                },
+                success: function (result) {
+                  console.log(result)
+                  const s = selectDimension.value;
+                  var labels = Object.values(result[s.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return "_" + y.toLowerCase() }).replace(/^_/, "")]);
+                  console.log(labels)
+                  let datasets = [];
+                  let hue = 240;
+                  metrics.forEach(metric => {
+                    let a;
+                    if (selectChartType.value === "pie") {
+                      a = [];
+                      labels.forEach(label => {
+                        a.push(`hsl(${hue}, 100%, 50%`);
+                        hue = (hue + 40) % 360;
+                      });
+                    }
+                    else {
+                      a = `hsl(${hue}, 100%, 50%)`;
+                    }
+                    let s1 = metric;
+                    s1 = s1.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return "_" + y.toLowerCase() }).replace(/^_/, "");
+                    console.log(result[s1]);
+                    datasets.push({
+                      label: metric,
+                      backgroundColor: a,
+                      borderColor: a,
+                      data: Object.values(result[s1])
+                    });
+                    hue = (hue + 40) % 360;
+                  });
+
+                  const data = {
+                    labels: labels,
+                    datasets: datasets
+                  };
+                  const config = {
+                    type: selectChartType.value,
+                    data,
+                    options: {}
+                  };
+                  configs.push(config);
+                  configs.forEach((c, i) => {
+                    console.log(chartNumber);
+                    charts[i] = new Chart(document.getElementById(`chart${i + 1}`), c)
+                  })
+
+                  console.log(configs);
+                  //configs.forEach((config, i) => {
+                  //  charts[i] = new Chart(
+                  //   document.getElementById(`chart${i + 1}`),
+                  //    config
+                  //  );
+                  //});
+                  widgetName.value = "";
+                  metrics.splice(0);
+                  selectedMetrics.innerHTML = "";
+
+                  const deleteButtons = document.querySelectorAll(".delete");
+
+                  deletedCharts.forEach(deletedChartNumber => {
+                    document.querySelector(`.graph-${deletedChartNumber}`).style.display =
+                      "none";
+                  });
+
+                  deleteButtons.forEach((deleteButton, i) => {
+                    deleteButton.addEventListener("click", () => {
+                      document.querySelector(`.graph-${i + 1}`).style.display = "none";
+                      deletedCharts.push(i + 1);
+                    });
+                  });
+
+                  const editButtons = document.querySelectorAll(".edit");
+                  editButtons.forEach((editButton, i) => {
+                    editButton.addEventListener("click", () => {
+                      editWidgetNumber = i + 1;
+                      addWidgetButton.style.display = "none";
+                      editWidgetButton.style.display = "";
+                    });
+                  });
+                }
+              });
+            }
+
+            launchModal.addEventListener("click", () => {
+              addWidgetButton.style.display = "";
+              editWidgetButton.style.display = "none";
+            })
+
+            addWidgetButton.addEventListener("click", () => {
+              addWidget(chartNumber);
+              chartNumber++;
+            });
+            editWidgetButton.addEventListener("click", () => {
+              editWidget(editWidgetNumber);
+            });
+
+            selectMetrics.addEventListener("change", event => {
+              metrics.push(event.target.value);
+              html = ``;
+              metrics.forEach(metric => {
+                html += `<div>${metric}</div>`;
+              });
+              selectedMetrics.innerHTML = html;
+              event.target.value = "add_metric";
+            });
+
+            const clearAll = document.querySelector(".clear-all");
+            clearAll.addEventListener("click", () => {
+              for(let i = 0; i < configs.length; i++) {
+                document.querySelector(`.graph-${i + 1}`).style.display = "none";
+                deletedCharts.push(i + 1);
+              }
+            })
+
+            document.querySelector(".print").addEventListener("click", () => { window.print() })
+
+          </script>
+
+      
+  
+
+  <script>
+    $(document).ready(function () {
+      App.init();
+    });
+  </script>
+  <script src="{%static 'js/custom.js'%}"></script>
+
+  {% endblock body %}

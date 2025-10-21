@@ -1,0 +1,235 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Work Assignment Detail - Payshift God Mode{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Work Assignment Detail</h1>
+    <div>
+        <a href="{% url 'godmode:work_assignments' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Assignments
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <!-- Assignment Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Assignment Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Title:</strong> {{ assignment.title }}
+                </div>
+                <div class="mb-3">
+                    <strong>Type:</strong> {{ assignment.get_task_type_display }}
+                </div>
+                <div class="mb-3">
+                    <strong>Priority:</strong>
+                    <span class="badge bg-{{ assignment.priority }}">
+                        {{ assignment.get_priority_display }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{{ assignment.status }}">
+                        {{ assignment.get_status_display }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Assigned To:</strong>
+                    <a href="{% url 'godmode:user_detail' assignment.admin.id %}">
+                        {{ assignment.admin.username }}
+                    </a>
+                </div>
+                <div class="mb-3">
+                    <strong>Assigned By:</strong>
+                    {% if assignment.assigned_by %}
+                    <a href="{% url 'godmode:user_detail' assignment.assigned_by.id %}">
+                        {{ assignment.assigned_by.username }}
+                    </a>
+                    {% else %}
+                    System
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <strong>Created:</strong> {{ assignment.created_at|date:"M d, Y H:i" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Due Date:</strong>
+                    {% if assignment.due_date %}
+                    {{ assignment.due_date|date:"M d, Y H:i" }}
+                    {% else %}
+                    Not specified
+                    {% endif %}
+                </div>
+                {% if assignment.completed_at %}
+                <div class="mb-3">
+                    <strong>Completed:</strong> {{ assignment.completed_at|date:"M d, Y H:i" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Related Object -->
+        {% if related_object %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Related {{ assignment.related_object_type|title }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>ID:</strong> {{ related_object.id }}
+                </div>
+                {% if assignment.related_object_type == 'disputes.dispute' %}
+                <div class="mb-3">
+                    <strong>Type:</strong> {{ related_object.dispute_type }}
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong> {{ related_object.status }}
+                </div>
+                <div class="mb-3">
+                    <strong>Filed By:</strong>
+                    <a href="{% url 'godmode:user_detail' related_object.filed_by.id %}">
+                        {{ related_object.filed_by.username }}
+                    </a>
+                </div>
+                <div class="mb-3">
+                    <strong>Filed Against:</strong>
+                    <a href="{% url 'godmode:user_detail' related_object.filed_against.id %}">
+                        {{ related_object.filed_against.username }}
+                    </a>
+                </div>
+                {% elif assignment.related_object_type == 'jobs.job' %}
+                <div class="mb-3">
+                    <strong>Title:</strong> {{ related_object.title }}
+                </div>
+                <div class="mb-3">
+                    <strong>Client:</strong>
+                    <a href="{% url 'godmode:user_detail' related_object.client.id %}">
+                        {{ related_object.client.username }}
+                    </a>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong> {{ related_object.status }}
+                </div>
+                {% elif assignment.related_object_type == 'payment.payment' %}
+                <div class="mb-3">
+                    <strong>Amount:</strong> {{ related_object.amount }}
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong> {{ related_object.status }}
+                </div>
+                <div class="mb-3">
+                    <strong>Payer:</strong>
+                    <a href="{% url 'godmode:user_detail' related_object.payer.id %}">
+                        {{ related_object.payer.username }}
+                    </a>
+                </div>
+                {% endif %}
+                <div class="mb-3">
+                    <a href="{% url 'admin:'|add:assignment.related_object_type|replace:'.':'_'|add:'_change' related_object.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="bi bi-pencil"></i> View in Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Description -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Description</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    {{ assignment.description|linebreaks }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Notes</h5>
+            </div>
+            <div class="card-body">
+                {% if assignment.notes %}
+                <div class="mb-3">
+                    <pre class="bg-light p-3">{{ assignment.notes }}</pre>
+                </div>
+                {% else %}
+                <p class="text-muted">No notes available for this assignment.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Update Status Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Update Status</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'godmode:work_assignment_detail' assignment.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            {% for status_code, status_name in status_choices %}
+                            <option value="{{ status_code }}" {% if assignment.status == status_code %}selected{% endif %}>
+                                {{ status_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Add Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Update Status
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Reassign Form (for superusers only) -->
+        {% if request.user.is_superuser %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Reassign Task</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'godmode:work_assignment_detail' assignment.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reassign">
+                    
+                    <div class="mb-3">
+                        <label for="admin_id" class="form-label">Assign To</label>
+                        <select class="form-select" id="admin_id" name="admin_id">
+                            {% for admin in admin_users %}
+                            <option value="{{ admin.id }}" {% if assignment.admin.id == admin.id %}selected{% endif %}>
+                                {{ admin.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-person-check"></i> Reassign
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'index.html' %} {%load static%} {% block body %}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+                <div class="row">
+                    <div class="col card m-2 p-4">
+                        <div>
+                            <div>
+                                <span class="ml-1">Tasks By Priority</span>
+                            </div>
+                            <canvas id="chart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="col card m-2 p-4">
+                        <div>
+                            <div>
+                                <span class="ml-1">Tasks By Project</span>
+                            </div>
+                            <canvas id="chart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+<script>
+    $(document).ready(function () {
+        App.init();
+    });
+</script>
+<script src="{%static 'js/custom.js'%}"></script>
+
+<script>
+    var labels = ["Not Started", "In Progress", "On Hold", "Cancelled", "Finished"];
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: "Number of Tasks vs Priority",
+                backgroundColor: "rgb(0, 0, 255)",
+                borderColor: "rgb(0, 0, 255)",
+                data: {{ priority_graph| safe }}
+            }
+        ]
+    };
+    const config = {
+        type: "bar",
+        data,
+        options: {}
+    };
+    const myChart1 = new Chart(document.getElementById("chart1"), config);
+    var labels2 = {{ project_labels| safe }};
+    const data2 = {
+        labels: labels2,
+        datasets: [
+            {
+                label: "Number of Tasks vs Project",
+                backgroundColor: "rgb(0, 0, 255)",
+                borderColor: "rgb(0, 0, 255)",
+                data: {{ project_graph| safe }}
+            }
+        ]
+    };
+    const config2 = {
+        type: "bar",
+        data: data2,
+        options: {}
+    };
+    const myChart2 = new Chart(document.getElementById("chart2"), config2);
+
+</script>
+
+{% endblock body %}

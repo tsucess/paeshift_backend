@@ -1,0 +1,502 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Redis Dashboard | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .redis-dashboard {
+        padding: 20px;
+    }
+    .dashboard-section {
+        margin-bottom: 30px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .dashboard-section h2 {
+        margin-top: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    .stat-card {
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        padding: 15px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .stat-card h3 {
+        margin-top: 0;
+        font-size: 16px;
+        color: #666;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+    }
+    .chart-container {
+        height: 300px;
+        margin-top: 20px;
+    }
+    .actions-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .action-button {
+        padding: 10px 15px;
+        background-color: #79aec8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .action-button:hover {
+        background-color: #417690;
+    }
+    .action-button.danger {
+        background-color: #c14747;
+    }
+    .action-button.danger:hover {
+        background-color: #a12c2c;
+    }
+    .action-button.success {
+        background-color: #5cb85c;
+    }
+    .action-button.success:hover {
+        background-color: #449d44;
+    }
+    .action-button.warning {
+        background-color: #f0ad4e;
+    }
+    .action-button.warning:hover {
+        background-color: #ec971f;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    table.data-table th, table.data-table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    table.data-table th {
+        background-color: #f2f2f2;
+    }
+    table.data-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    .loading:after {
+        content: " ";
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        margin: 0 10px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        border-top-color: #333;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+    }
+    .alert-success {
+        color: #3c763d;
+        background-color: #dff0d8;
+        border-color: #d6e9c6;
+    }
+    .alert-danger {
+        color: #a94442;
+        background-color: #f2dede;
+        border-color: #ebccd1;
+    }
+    .alert-warning {
+        color: #8a6d3b;
+        background-color: #fcf8e3;
+        border-color: #faebcc;
+    }
+    .alert-info {
+        color: #31708f;
+        background-color: #d9edf7;
+        border-color: #bce8f1;
+    }
+    .refresh-button {
+        float: right;
+        padding: 5px 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .refresh-button:hover {
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial data load
+        loadDashboardData();
+        
+        // Set up refresh button
+        document.getElementById('refresh-button').addEventListener('click', function() {
+            loadDashboardData();
+        });
+        
+        // Set up action buttons
+        document.getElementById('warm-cache-button').addEventListener('click', function() {
+            performAction('warm-cache', 'Warming cache...');
+        });
+        
+        document.getElementById('optimize-memory-button').addEventListener('click', function() {
+            performAction('optimize-memory', 'Optimizing memory...');
+        });
+        
+        document.getElementById('delete-unused-button').addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete unused keys?')) {
+                performAction('delete-unused', 'Deleting unused keys...');
+            }
+        });
+    });
+    
+    function loadDashboardData() {
+        showLoading();
+        
+        // Fetch dashboard data
+        fetch('/core/redis/dashboard')
+            .then(response => response.json())
+            .then(data => {
+                updateDashboard(data);
+                hideLoading();
+            })
+            .catch(error => {
+                console.error('Error loading dashboard data:', error);
+                showAlert('Error loading dashboard data: ' + error.message, 'danger');
+                hideLoading();
+            });
+    }
+    
+    function updateDashboard(data) {
+        // Update memory stats
+        document.getElementById('memory-usage').textContent = data.memory.memory_usage_percent;
+        document.getElementById('used-memory').textContent = data.memory.used_memory_human;
+        document.getElementById('max-memory').textContent = data.memory.maxmemory_human;
+        
+        // Update key counts
+        document.getElementById('total-keys').textContent = data.keys.total_keys;
+        
+        // Update hit rate
+        document.getElementById('hit-rate').textContent = data.hit_rate.hit_rate;
+        document.getElementById('cache-hits').textContent = data.hit_rate.hits;
+        document.getElementById('cache-misses').textContent = data.hit_rate.misses;
+        
+        // Update key counts by prefix
+        const keyCountsTable = document.getElementById('key-counts-table');
+        keyCountsTable.innerHTML = '';
+        
+        const keyCounts = data.keys.key_counts_by_prefix;
+        for (const prefix in keyCounts) {
+            const row = document.createElement('tr');
+            const prefixCell = document.createElement('td');
+            const countCell = document.createElement('td');
+            
+            prefixCell.textContent = prefix;
+            countCell.textContent = keyCounts[prefix];
+            
+            row.appendChild(prefixCell);
+            row.appendChild(countCell);
+            keyCountsTable.appendChild(row);
+        }
+        
+        // Update slow operations
+        const slowOpsTable = document.getElementById('slow-ops-table');
+        slowOpsTable.innerHTML = '';
+        
+        data.slow_operations.forEach(op => {
+            const row = document.createElement('tr');
+            
+            const opCell = document.createElement('td');
+            const keyCell = document.createElement('td');
+            const durationCell = document.createElement('td');
+            const timestampCell = document.createElement('td');
+            
+            opCell.textContent = op.operation;
+            keyCell.textContent = op.key;
+            durationCell.textContent = op.duration_ms.toFixed(2) + ' ms';
+            timestampCell.textContent = new Date(op.timestamp).toLocaleString();
+            
+            row.appendChild(opCell);
+            row.appendChild(keyCell);
+            row.appendChild(durationCell);
+            row.appendChild(timestampCell);
+            slowOpsTable.appendChild(row);
+        });
+        
+        // Update charts
+        updateMemoryChart(data.memory);
+        updateHitRateChart(data.hit_rate);
+    }
+    
+    function updateMemoryChart(memoryData) {
+        const ctx = document.getElementById('memory-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (window.memoryChart) {
+            window.memoryChart.destroy();
+        }
+        
+        // Create new chart
+        window.memoryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Used Memory', 'Free Memory'],
+                datasets: [{
+                    data: [
+                        parseFloat(memoryData.used_memory_bytes),
+                        parseFloat(memoryData.maxmemory_bytes) - parseFloat(memoryData.used_memory_bytes)
+                    ],
+                    backgroundColor: ['#36a2eb', '#e2e3e5']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Memory Usage'
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateHitRateChart(hitRateData) {
+        const ctx = document.getElementById('hit-rate-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (window.hitRateChart) {
+            window.hitRateChart.destroy();
+        }
+        
+        // Create new chart
+        window.hitRateChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Hits', 'Misses'],
+                datasets: [{
+                    data: [hitRateData.hits, hitRateData.misses],
+                    backgroundColor: ['#4bc0c0', '#ff6384']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Cache Hit Rate'
+                    }
+                }
+            }
+        });
+    }
+    
+    function performAction(action, loadingMessage) {
+        showLoading(loadingMessage);
+        
+        fetch(`/core/redis/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    showAlert(data.error, 'danger');
+                } else {
+                    showAlert('Action completed successfully', 'success');
+                    loadDashboardData();
+                }
+            })
+            .catch(error => {
+                console.error(`Error performing action ${action}:`, error);
+                hideLoading();
+                showAlert(`Error performing action: ${error.message}`, 'danger');
+            });
+    }
+    
+    function showLoading(message = 'Loading...') {
+        const loading = document.getElementById('loading');
+        loading.textContent = message;
+        loading.style.display = 'block';
+    }
+    
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+    }
+    
+    function showAlert(message, type) {
+        const alertsContainer = document.getElementById('alerts-container');
+        
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.textContent = message;
+        
+        alertsContainer.appendChild(alert);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="redis-dashboard">
+    <h1>Redis Dashboard <button id="refresh-button" class="refresh-button">Refresh</button></h1>
+    
+    <div id="alerts-container"></div>
+    <div id="loading" class="loading">Loading...</div>
+    
+    <div class="dashboard-section">
+        <h2>Overview</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Memory Usage</h3>
+                <div class="stat-value" id="memory-usage">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Used Memory</h3>
+                <div class="stat-value" id="used-memory">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Max Memory</h3>
+                <div class="stat-value" id="max-memory">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Keys</h3>
+                <div class="stat-value" id="total-keys">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Hit Rate</h3>
+                <div class="stat-value" id="hit-rate">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Cache Hits</h3>
+                <div class="stat-value" id="cache-hits">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Cache Misses</h3>
+                <div class="stat-value" id="cache-misses">-</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>Charts</h2>
+        <div class="stats-grid">
+            <div class="chart-container">
+                <canvas id="memory-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="hit-rate-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>Key Counts by Prefix</h2>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Prefix</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody id="key-counts-table">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>Slow Operations</h2>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Key</th>
+                        <th>Duration</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="slow-ops-table">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>Actions</h2>
+        <div class="actions-panel">
+            <button id="warm-cache-button" class="action-button success">Warm Cache</button>
+            <button id="optimize-memory-button" class="action-button warning">Optimize Memory</button>
+            <button id="delete-unused-button" class="action-button danger">Delete Unused Keys</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends 'godmode/base.html' %}
+
+{% block title %}Location Verification - Payshift God Mode{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Location Verification</h1>
+    <p class="text-muted">Verify user locations by comparing claimed addresses with location history.</p>
+</div>
+
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'godmode:location_verification' %}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">User</label>
+                        <select class="form-select" id="user_id" name="user_id">
+                            <option value="">All Users</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if filters.user_id|stringformat:"s" == user.id|stringformat:"s" %}selected{% endif %}>
+                                {{ user.username }} ({{ user.get_role_display }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            {% for status_code, status_name in status_choices %}
+                            <option value="{{ status_code }}" {% if filters.status == status_code %}selected{% endif %}>
+                                {{ status_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-filter"></i> Apply Filters
+                </button>
+                <a href="{% url 'godmode:location_verification' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Verification Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Location Verifications</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Claimed Address</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Verified By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for verification in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'godmode:user_detail' verification.user.id %}">
+                                {{ verification.user.username }}
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ verification.user.get_role_display }}</small>
+                        </td>
+                        <td>{{ verification.claimed_address }}</td>
+                        <td>
+                            <span class="badge badge-status {{ verification.verification_status }}">
+                                {{ verification.get_verification_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ verification.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if verification.verified_by %}
+                            {{ verification.verified_by.username }}
+                            {% else %}
+                            --
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'godmode:verify_location' verification.id %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-check-circle"></i> Verify
+                            </a>
+                            <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#mapModal{{ verification.id }}">
+                                <i class="bi bi-map"></i> Map
+                            </button>
+                            
+                            <!-- Map Modal -->
+                            <div class="modal fade" id="mapModal{{ verification.id }}" tabindex="-1" aria-labelledby="mapModalLabel{{ verification.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="mapModalLabel{{ verification.id }}">Location Map for {{ verification.user.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div id="map{{ verification.id }}" class="map-container"></div>
+                                            <div class="mt-3">
+                                                <strong>Claimed Address:</strong> {{ verification.claimed_address }}
+                                            </div>
+                                            <div class="mt-2">
+                                                <strong>Status:</strong>
+                                                <span class="badge badge-status {{ verification.verification_status }}">
+                                                    {{ verification.get_verification_status_display }}
+                                                </span>
+                                            </div>
+                                            {% if verification.verification_details.notes %}
+                                            <div class="mt-2">
+                                                <strong>Notes:</strong> {{ verification.verification_details.notes }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="{% url 'godmode:verify_location' verification.id %}" class="btn btn-primary">
+                                                <i class="bi bi-check-circle"></i> Verify
+                                            </a>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">No location verifications found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize maps for each verification
+        {% for verification in page_obj %}
+        (function() {
+            const mapId = 'map{{ verification.id }}';
+            const mapElement = document.getElementById(mapId);
+            
+            if (mapElement) {
+                const map = L.map(mapId).setView([{{ verification.claimed_latitude|default:"6.5244" }}, {{ verification.claimed_longitude|default:"3.3792" }}], 13);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                
+                // Add marker for claimed address
+                {% if verification.claimed_latitude and verification.claimed_longitude %}
+                const claimedMarker = L.marker([{{ verification.claimed_latitude }}, {{ verification.claimed_longitude }}])
+                    .addTo(map)
+                    .bindPopup('Claimed Address: {{ verification.claimed_address }}');
+                {% endif %}
+                
+                // Add markers for actual locations
+                {% if verification.actual_locations %}
+                const actualLocations = {{ verification.actual_locations|safe }};
+                
+                actualLocations.forEach(function(location, index) {
+                    if (location.latitude && location.longitude) {
+                        L.marker([location.latitude, location.longitude])
+                            .addTo(map)
+                            .bindPopup(`Location History #${index + 1}: ${location.timestamp}`);
+                    }
+                });
+                {% endif %}
+                
+                // Adjust map when modal is shown
+                const modal = document.getElementById('mapModal{{ verification.id }}');
+                modal.addEventListener('shown.bs.modal', function() {
+                    map.invalidateSize();
+                });
+            }
+        })();
+        {% endfor %}
+    });
+</script>
+{% endblock %}

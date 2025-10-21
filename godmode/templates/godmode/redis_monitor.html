@@ -1,0 +1,432 @@
+{% extends "godmode/base.html" %}
+{% load static %}
+
+{% block title %}Redis Cache Monitor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Redis Cache Monitor</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-memory"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Memory Usage</span>
+                                    <span class="info-box-number" id="memory-usage">Loading...</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" id="memory-usage-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-database"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total Keys</span>
+                                    <span class="info-box-number" id="total-keys">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-chart-line"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Hit Rate</span>
+                                    <span class="info-box-number" id="hit-rate">Loading...</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" id="hit-rate-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger"><i class="fas fa-clock"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Uptime</span>
+                                    <span class="info-box-number" id="uptime">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Key Distribution by Type</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="key-distribution-chart" style="height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Cache Hit/Miss Ratio</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="hit-miss-chart" style="height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Largest Keys by Memory Usage</h3>
+                                </div>
+                                <div class="card-body table-responsive p-0">
+                                    <table class="table table-hover text-nowrap">
+                                        <thead>
+                                            <tr>
+                                                <th>Key</th>
+                                                <th>Type</th>
+                                                <th>Size</th>
+                                                <th>TTL</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="largest-keys-table">
+                                            <tr>
+                                                <td colspan="5" class="text-center">Loading...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Cache Maintenance</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="btn-group mb-3">
+                                        <button type="button" class="btn btn-primary" id="warm-cache-btn">
+                                            <i class="fas fa-fire"></i> Warm Cache
+                                        </button>
+                                        <button type="button" class="btn btn-warning" id="clear-cache-btn">
+                                            <i class="fas fa-broom"></i> Clear Cache
+                                        </button>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Warm Cache Options</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="warm-job" checked>
+                                            <label class="form-check-label" for="warm-job">Jobs</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="warm-user" checked>
+                                            <label class="form-check-label" for="warm-user">Users</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="warm-industry" checked>
+                                            <label class="form-check-label" for="warm-industry">Industries</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="warm-subcategory" checked>
+                                            <label class="form-check-label" for="warm-subcategory">Subcategories</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Cache Status Log</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="direct-chat-messages" id="cache-log" style="height: 250px; overflow-y: auto;">
+                                        <div class="direct-chat-msg">
+                                            <div class="direct-chat-infos clearfix">
+                                                <span class="direct-chat-timestamp float-right">Loading...</span>
+                                            </div>
+                                            <div class="direct-chat-text">
+                                                Initializing Redis cache monitor...
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize charts
+    let keyDistributionChart = null;
+    let hitMissChart = null;
+
+    function initCharts() {
+        // Key distribution chart
+        const keyDistributionCtx = document.getElementById('key-distribution-chart').getContext('2d');
+        keyDistributionChart = new Chart(keyDistributionCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Loading...'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#f8f9fa'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+
+        // Hit/miss chart
+        const hitMissCtx = document.getElementById('hit-miss-chart').getContext('2d');
+        hitMissChart = new Chart(hitMissCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hits', 'Misses'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+    }
+
+    // Update cache stats
+    function updateCacheStats() {
+        fetch('/godmode/api/redis-stats/')
+            .then(response => response.json())
+            .then(data => {
+                // Update info boxes
+                document.getElementById('memory-usage').textContent = `${data.memory_used_mb.toFixed(2)} MB / ${data.memory_peak_mb.toFixed(2)} MB (${data.memory_usage_pct.toFixed(1)}%)`;
+                document.getElementById('memory-usage-bar').style.width = `${data.memory_usage_pct}%`;
+                
+                document.getElementById('total-keys').textContent = data.total_keys.toLocaleString();
+                
+                document.getElementById('hit-rate').textContent = `${data.hit_rate.toFixed(1)}%`;
+                document.getElementById('hit-rate-bar').style.width = `${data.hit_rate}%`;
+                
+                document.getElementById('uptime').textContent = data.uptime;
+
+                // Update key distribution chart
+                const keyTypes = Object.keys(data.key_counts_by_type);
+                const keyCounts = Object.values(data.key_counts_by_type);
+                const colors = generateColors(keyTypes.length);
+                
+                keyDistributionChart.data.labels = keyTypes;
+                keyDistributionChart.data.datasets[0].data = keyCounts;
+                keyDistributionChart.data.datasets[0].backgroundColor = colors;
+                keyDistributionChart.update();
+
+                // Update hit/miss chart
+                hitMissChart.data.datasets[0].data = [data.hits, data.misses];
+                hitMissChart.update();
+
+                // Update largest keys table
+                const largestKeysTable = document.getElementById('largest-keys-table');
+                largestKeysTable.innerHTML = '';
+                
+                data.largest_keys.forEach(key => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${key.key}</td>
+                        <td>${key.type}</td>
+                        <td>${key.size.toFixed(2)} KB</td>
+                        <td>${key.ttl > 0 ? formatTTL(key.ttl) : 'No expiration'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger delete-key" data-key="${key.key}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    largestKeysTable.appendChild(row);
+                });
+
+                // Add log entry
+                addLogEntry(`Updated cache stats: ${data.total_keys} keys, ${data.hit_rate.toFixed(1)}% hit rate`);
+            })
+            .catch(error => {
+                console.error('Error fetching cache stats:', error);
+                addLogEntry(`Error fetching cache stats: ${error.message}`, 'error');
+            });
+    }
+
+    // Generate colors for chart
+    function generateColors(count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const hue = (i * 137) % 360;
+            colors.push(`hsl(${hue}, 70%, 60%)`);
+        }
+        return colors;
+    }
+
+    // Format TTL
+    function formatTTL(seconds) {
+        if (seconds < 60) {
+            return `${seconds}s`;
+        } else if (seconds < 3600) {
+            return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+        } else if (seconds < 86400) {
+            return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+        } else {
+            return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`;
+        }
+    }
+
+    // Add log entry
+    function addLogEntry(message, type = 'info') {
+        const log = document.getElementById('cache-log');
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString();
+        
+        const entry = document.createElement('div');
+        entry.className = 'direct-chat-msg';
+        entry.innerHTML = `
+            <div class="direct-chat-infos clearfix">
+                <span class="direct-chat-timestamp float-right">${timestamp}</span>
+            </div>
+            <div class="direct-chat-text ${type === 'error' ? 'bg-danger' : ''}">
+                ${message}
+            </div>
+        `;
+        
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // Warm cache
+    function warmCache() {
+        const models = [];
+        if (document.getElementById('warm-job').checked) models.push('jobs.job');
+        if (document.getElementById('warm-user').checked) models.push('accounts.customuser');
+        if (document.getElementById('warm-industry').checked) models.push('jobs.jobindustry');
+        if (document.getElementById('warm-subcategory').checked) models.push('jobs.jobsubcategory');
+
+        if (models.length === 0) {
+            addLogEntry('No models selected for cache warming', 'error');
+            return;
+        }
+
+        addLogEntry(`Warming cache for models: ${models.join(', ')}`);
+        
+        fetch('/godmode/api/warm-cache/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ models }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                addLogEntry(`Cache warming completed: ${data.message}`);
+                updateCacheStats();
+            })
+            .catch(error => {
+                console.error('Error warming cache:', error);
+                addLogEntry(`Error warming cache: ${error.message}`, 'error');
+            });
+    }
+
+    // Clear cache
+    function clearCache() {
+        if (!confirm('Are you sure you want to clear the entire Redis cache? This will affect all users.')) {
+            return;
+        }
+
+        addLogEntry('Clearing Redis cache...');
+        
+        fetch('/godmode/api/clear-cache/', {
+            method: 'POST',
+        })
+            .then(response => response.json())
+            .then(data => {
+                addLogEntry(`Cache cleared: ${data.message}`);
+                updateCacheStats();
+            })
+            .catch(error => {
+                console.error('Error clearing cache:', error);
+                addLogEntry(`Error clearing cache: ${error.message}`, 'error');
+            });
+    }
+
+    // Delete key
+    function deleteKey(key) {
+        if (!confirm(`Are you sure you want to delete the key "${key}"?`)) {
+            return;
+        }
+
+        addLogEntry(`Deleting key: ${key}`);
+        
+        fetch('/godmode/api/delete-key/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ key }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                addLogEntry(`Key deleted: ${data.message}`);
+                updateCacheStats();
+            })
+            .catch(error => {
+                console.error('Error deleting key:', error);
+                addLogEntry(`Error deleting key: ${error.message}`, 'error');
+            });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+        updateCacheStats();
+        
+        // Set up refresh interval
+        setInterval(updateCacheStats, 30000); // Update every 30 seconds
+        
+        // Set up event listeners
+        document.getElementById('warm-cache-btn').addEventListener('click', warmCache);
+        document.getElementById('clear-cache-btn').addEventListener('click', clearCache);
+        
+        // Set up event delegation for delete buttons
+        document.getElementById('largest-keys-table').addEventListener('click', function(event) {
+            if (event.target.classList.contains('delete-key') || event.target.parentElement.classList.contains('delete-key')) {
+                const button = event.target.classList.contains('delete-key') ? event.target : event.target.parentElement;
+                const key = button.dataset.key;
+                deleteKey(key);
+            }
+        });
+    });
+</script>
+{% endblock %}

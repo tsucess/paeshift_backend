@@ -1,0 +1,17 @@
+[flake8]
+max-line-length = 127
+exclude = 
+    .git,
+    __pycache__,
+    */migrations/*,
+    venv,
+    env,
+    build,
+    dist,
+    frontend/build/static,
+    */tests/*,
+    manage.py,
+    */settings.py
+ignore = E203, E266, E501, W503, F403, F401
+max-complexity = 10
+select = B,C,E,F,W,T4,B9

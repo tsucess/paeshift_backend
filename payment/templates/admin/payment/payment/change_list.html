@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    <li>
+        <a href="{{ webhook_dashboard_url }}" class="viewlink">
+            {% trans "Webhook Dashboard" %}
+        </a>
+    </li>
+    {{ block.super }}
+{% endblock %}
