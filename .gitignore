@@ -45,6 +45,56 @@ chatbot/label_encoder.pickle
 .env.development.local
 .env.test.local
 .env.production.
+
+# Credentials and secrets
+*.json
+!package.json
+!package-lock.json
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.p7b
+*.p7c
+*.p7r
+*.p7s
+*.spc
+*.keystore
+*.jks
+*.bks
+*.p8
+*.pkcs8
+*.pkcs12
+*.pfx
+*.p12
+*.pks12
+*.p7b
+*.p7c
+*.p7r
+*.p7s
+*.spc
+*.keystore
+*.jks
+*.bks
+
+# Google Cloud credentials
+*-gcp-*.json
+*-gcloud-*.json
+*-google-*.json
+*-firebase-*.json
+*-service-account-*.json
+rfm360-*.json
+google-credentials.json
+gcp-credentials.json
+
+# AWS credentials
+aws-credentials.json
+.aws/
+*.aws
+
 # Virtual environments
 .venv/
 env/
