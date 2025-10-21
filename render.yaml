@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: paeshift-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn payshift.wsgi:application --bind 0.0.0.0:8000
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.4
+      - key: DJANGO_SETTINGS_MODULE
+        value: payshift.settings
+      - key: DJANGO_DEBUG
+        value: "False"
+    healthCheckPath: /api/health/
+    healthCheckInterval: 30
+    maxShutdownDelay: 30
+
