@@ -567,8 +567,7 @@ def _process_paystack(payment: Payment, payload: InitiatePaymentSchema) -> str:
         "reference": payment.pay_code,
         "email": f"{strip_non_ascii(payload.first_name.lower())}@user.com",
         "amount": int(payment.original_amount * 100),
-        # "callback_url": f"{settings.FRONTEND_URL}/dashboard/",
-        "callback_url": f"{getattr(settings, 'BACKEND_URL', 'https://paeshift-backend-rwp3.onrender.com')}/payment/verify/?gateway=paystack",
+        "callback_url": f"{settings.BASE_URL}/payment/verify/?gateway=paystack",
 
         "metadata": {
             "payment_id": payment.id,
@@ -611,8 +610,7 @@ def _process_flutterwave(payment: Payment, payload: InitiatePaymentSchema) -> st
         "tx_ref": payment.pay_code,
         "amount": str(payment.original_amount),
         "currency": "NGN",
-        # "redirect_url": f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')}/dashboard/",
-        "redirect_url": f"{getattr(settings, 'BACKEND_URL', 'https://paeshift-backend-rwp3.onrender.com')}/payment/verify/?gateway=flutterwave",
+        "redirect_url": f"{settings.BASE_URL}/payment/verify/?gateway=flutterwave",
         "payment_options": "card",
         "customer": {
             "email": f"{payload.first_name.lower()}@user.com",

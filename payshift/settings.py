@@ -215,13 +215,15 @@ CACHE_TTL_REVIEWS = int(os.getenv('CACHE_TTL_REVIEWS', '1800'))  # 30 minutes
 CACHE_TTL_PAYMENTS = int(os.getenv('CACHE_TTL_PAYMENTS', '300'))  # 5 minutes
 CACHE_TTL_JOBS = int(os.getenv('CACHE_TTL_JOBS', '1800'))  # 30 minutes
 CACHE_TTL_APPLICATIONS = int(os.getenv('CACHE_TTL_APPLICATIONS', '300'))  # 5 minutes
+
 # ======= Merged from backup settings.py =======
 # Google Maps API Key
-GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "AIzaSyCiCDANDMScIcsm-d0QMDaAXFS8M-0GdLU")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 # External URLs
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+BASE_URL = os.getenv("BASE_URL")
+
 
 # Godmode API Token
 GODMODE_API_TOKEN = os.getenv("GODMODE_API_TOKEN", "godmode-secret-token-change-in-production")

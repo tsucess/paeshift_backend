@@ -32,7 +32,10 @@ from .geocoding_monitor import GeocodingMetrics
 logger = logging.getLogger(__name__)
 
 # Geocoding settings
-GOOGLE_MAPS_API_KEY = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
+# GOOGLE_MAPS_API_KEY = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
+
+# Google Maps API Key
+GOOGLE_MAPS_API_KEY = settings.GOOGLE_MAPS_API_KEY
 MAPBOX_API_KEY = getattr(settings, "MAPBOX_API_KEY", None)
 GEOCODING_TIMEOUT = getattr(settings, "GEOCODING_TIMEOUT", 15)  # seconds
 GEOCODING_PROVIDERS = getattr(settings, "GEOCODING_PROVIDERS", ["google", "nominatim"])
