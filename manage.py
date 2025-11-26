@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "payshift.settings")
 import sys
+# Ensure console uses UTF-8 on Windows so emojis in logs won't raise UnicodeEncodeError
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 
 def main():

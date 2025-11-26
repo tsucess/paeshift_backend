@@ -139,17 +139,17 @@ def get_related_object(model, field, value):
 def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
     from jobs.models import Application
     now = date.today()
-    job_date = job.date
+    job_start_date = job.start_date
 
     date_flags = {
-        "is_today": job_date == now if job_date else False,
-        "is_yesterday": job_date == (now - timedelta(days=1)) if job_date else False,
+        "is_today": job_start_date == now if job_start_date else False,
+        "is_yesterday": job_start_date == (now - timedelta(days=1)) if job_start_date else False,
         "is_this_week": (
-            job_date.isocalendar()[1] == now.isocalendar()[1] if job_date else False
+            job_start_date.isocalendar()[1] == now.isocalendar()[1] if job_start_date else False
         ),
         "is_this_month": (
-            job_date.month == now.month and job_date.year == now.year
-            if job_date
+            job_start_date.month == now.month and job_start_date.year == now.year
+            if job_start_date
             else False
         ),
     }
@@ -190,13 +190,14 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
         ),
         "client_first_name": job.client.first_name if job.client else None,
         "client_last_name": job.client.last_name if job.client else None,
-        # Always include the key, set to None if no active picture
         "client_profile_pic_url": None,
-        "date": job.date.isoformat() if job.date else None,
+        "start_date": job.start_date.isoformat() if job.start_date else None,
+        "end_date": job.end_date.isoformat() if job.end_date else None,
+        "date": job.start_date.isoformat() if job.start_date else None,  # Add this line
         "date_posted_human": (
             naturalday(localtime(job.created_at)) if job.created_at else None
         ),
-        "date_human": naturalday(job.date) if job.date else None,
+        "date_human": naturalday(job.start_date) if job.start_date else None,
         "start_time_human": (
             job.start_time.strftime("%I:%M %p") if job.start_time else None
         ),
@@ -224,6 +225,7 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
         "has_applied": has_applied,
         "application_status": application_status,
     }
+
     if job.client and hasattr(job.client, "profile"):
         profile = job.client.profile
         active_pic = profile.pictures.filter(is_active=True).first()
@@ -236,8 +238,6 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
                     str(job.duration_hours) if job.duration_hours is not None else None
                 ),
                 "client_id": job.client.id if job.client else None,
-                # keep client_rating consistent, remove the duplicate
-                # "client_rating": job.client.rating,
                 "employer_name": (
                     f"{job.client.first_name} {job.client.last_name}"
                     if job.client
@@ -245,7 +245,6 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
                 ),
                 "job_type": job.job_type,
                 "shift_type": job.shift_type,
-                "start_date": job.date.isoformat() if job.date else None,
                 "start_time_str": (
                     job.start_time.isoformat() if job.start_time else None
                 ),

@@ -220,6 +220,7 @@ class JobDetailSchema(HashableSchema):
     total_amount: str
     service_fee: str
     start_date: Optional[str] = None
+    end_date: Optional[str] = None
     industry_id: int
     industry_name: str
 
@@ -261,7 +262,8 @@ class CreateJobSchema(HashableSchema):
     applicants_needed: int
     job_type: JobType
     shift_type: ShiftType
-    date: str
+    start_date: str
+    end_date: str
     start_time: str
     end_time: str
     rate: float
@@ -278,7 +280,8 @@ class EditJobSchema(Schema):
     applicants_needed: Optional[int]
     job_type: Optional[str]  # or Enum
     shift_type: Optional[str]  # or Enum
-    date: Optional[str]
+    start_date: Optional[str]
+    end_date: Optional[str]
     start_time: Optional[str]
     end_time: Optional[str]
     rate: Optional[float]

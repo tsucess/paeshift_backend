@@ -222,14 +222,14 @@ def get_client_jobs_by_id(
     """
     client = get_object_or_404(User.objects.select_related('profile'), id=user_id)
     # Optimize query with select_related for related objects
-    qs = Job.objects.select_related(
-        'client__profile',
-        'industry',
-        'subcategory',
-        'created_by__profile'
-    ).prefetch_related('applications').filter(client=client).order_by("-date")
+    jobs = (
+        Job.objects.select_related("industry", "subcategory")
+        .prefetch_related("applications")
+        .filter(client=client)
+        .order_by("-start_date")  # was "-date"
+    )
 
-    paginator = Paginator(qs, page_size)
+    paginator = Paginator(jobs, page_size)
 
     try:
         jobs_page = paginator.page(page)

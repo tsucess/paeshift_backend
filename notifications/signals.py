@@ -37,6 +37,10 @@ from .utils import (
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+def _safe_update_fields(kwargs):
+    """Return iterable update_fields (coerce None -> [])"""
+    return kwargs.get('update_fields') or []
+
 # ====
 # Helper Functions
 # ====
@@ -101,6 +105,7 @@ def handle_user_creation(sender, instance, created, **kwargs):
     Handles notifications for user account creation and updates.
     """
     try:
+        update_fields = _safe_update_fields(kwargs)
         with transaction.atomic():
             if created:
                 create_notification(
@@ -120,7 +125,7 @@ def handle_user_creation(sender, instance, created, **kwargs):
                         notification_type="admin_new_user",
                         importance="medium"
                     )
-            elif not instance._state.adding and 'is_active' in kwargs.get('update_fields', []):
+            elif not instance._state.adding and 'is_active' in update_fields:
                 status = "activated" if instance.is_active else "deactivated"
                 create_notification(
                     user=instance,
@@ -130,7 +135,7 @@ def handle_user_creation(sender, instance, created, **kwargs):
                     importance="high"
                 )
     except Exception as e:
-        logger.error(f"Error handling user creation: {str(e)}")
+        logger.error(f"Error handling user creation: {str(e)}", exc_info=True)
 
 # @receiver(pre_save, sender=Profile)
 # def handle_profile_picture_change(sender, instance, **kwargs):

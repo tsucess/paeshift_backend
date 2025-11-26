@@ -240,7 +240,8 @@ class Job(models.Model):
     shift_type = models.CharField(
         max_length=20, choices=ShiftType.choices, db_index=True
     )
-    date = models.DateField(db_index=True)
+    start_date = models.DateField(db_index=True)
+    end_date = models.DateField(db_index=True)
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     recurring_days = models.CharField(
@@ -299,11 +300,11 @@ class Job(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-created_at"]
+        ordering = ["-start_date", "-created_at"]
         indexes = [
             models.Index(fields=["status", "payment_status"]),
             models.Index(fields=["latitude", "longitude"]),
-            models.Index(fields=["date", "start_time"]),
+            models.Index(fields=["start_date", "start_time"]),
             models.Index(fields=["is_active"]),
             models.Index(fields=["job_type", "shift_type"]),
         ]
@@ -317,7 +318,7 @@ class Job(models.Model):
         now = timezone.now()
         if self.actual_shift_start and not self.actual_shift_end:
             return True
-        if self.date == now.date():
+        if self.start_date == now.date():
             current_time = now.time()
             return self.start_time <= current_time <= self.end_time
         return False
@@ -331,11 +332,11 @@ class Job(models.Model):
 
     @property
     def duration_hours(self):
-        if not all([self.start_time, self.end_time, self.date]):
+        if not all([self.start_time, self.end_time, self.start_date, self.end_date]):
             return 0.0
 
-        start_dt = datetime.combine(self.date, self.start_time)
-        end_dt = datetime.combine(self.date, self.end_time)
+        start_dt = datetime.combine(self.start_date, self.start_time)
+        end_dt = datetime.combine(self.end_date, self.end_time)
 
         # Handle overnight shifts
         if end_dt < start_dt:
@@ -993,7 +994,8 @@ class SavedJob(models.Model):
         return {
             "title": self.job.title,
             "status": self.job.status,
-            "date": self.job.date,
+            "start_date": self.job.start_date,
+            "end_date": self.job.end_date,
             "location": self.job.location,
         }
 
@@ -1013,7 +1015,8 @@ class SavedJob(models.Model):
             "job_details": {
                 "title": self.job.title,
                 "status": self.job.status,
-                "date": self.job.date.isoformat() if hasattr(self.job, 'date') and self.job.date else None,
+                "start_date": self.job.start_date.isoformat() if hasattr(self.job, 'start_date') and self.job.start_date else None,
+                "end_date": self.job.end_date.isoformat() if hasattr(self.job, 'end_date') and self.job.end_date else None,
                 "location": self.job.location,
                 "industry": self.job.industry.name if self.job.industry else None,
             }

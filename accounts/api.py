@@ -437,7 +437,7 @@ def signup_view(request, payload: SignupSchema):
 
         if User.objects.filter(email=payload.email).exists():
             core_logger.warning(f"Signup attempt with existing email: {payload.email}")
-            raise ConflictError("Email already registered")
+            return JsonResponse({"error": "Email already exists"}, status=409)
 
         if payload.role not in VALID_ROLES:
             core_logger.warning(f"Invalid role in signup attempt: {payload.role}")
@@ -596,16 +596,16 @@ def signup_view(request, payload: SignupSchema):
             "email": user.email
         }, status=200)
 
-    except (ConflictError, PaeshiftValidationError):
+    except PaeshiftValidationError:
         raise
     except IntegrityError as e:
         core_logger.error(f"IntegrityError during signup for {payload.email}: {str(e)}")
         error_msg = str(e).lower()
-
+ 
         if "username" in error_msg:
-            raise ConflictError("Username already exists")
+            return JsonResponse({"error": "Username already exists"}, status=409)
         elif "email" in error_msg:
-            raise ConflictError("Email already exists")
+            return JsonResponse({"error": "Email already exists"}, status=409)
         elif "foreign key constraint" in error_msg:
             # Handle foreign key constraint errors
             core_logger.error(f"Foreign key constraint error: {str(e)}")
@@ -801,8 +801,6 @@ def change_password(request, data: PasswordChangeSchema):
     except Exception as e:
         core_logger.error(f"Error changing password: {str(e)}", exc_info=True)
         raise InternalServerError("Failed to change password")
-
-
 
 @cache_api_response(timeout=CACHE_TTL_PROFILE, prefix='profile:user')
 @accounts_router.get(

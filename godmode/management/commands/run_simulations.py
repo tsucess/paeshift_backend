@@ -226,7 +226,7 @@ def create_test_job(user: User, job_data: Optional[Dict[str, Any]] = None) -> Jo
         subcategory = random.choice(JobSubCategory.objects.filter(industry=industry))
 
         # Generate random date (between today and 30 days in future)
-        job_date = timezone.now().date() + timedelta(days=random.randint(1, 30))
+        job_start_date = timezone.now().date() + timedelta(days=random.randint(1, 30))
 
         # Generate random times (ensuring end_time > start_time)
         start_hour = random.randint(8, 16)  # 8 AM to 4 PM
@@ -246,7 +246,7 @@ def create_test_job(user: User, job_data: Optional[Dict[str, Any]] = None) -> Jo
             "applicants_needed": random.randint(1, 5),
             "job_type": random.choice(["single_day", "multiple_days"]),
             "shift_type": random.choice(["morning", "afternoon", "evening"]),
-            "date": job_date.strftime("%Y-%m-%d"),
+            "start_date": job_start_date.strftime("%Y-%m-%d"),
             "start_time": start_time,
             "end_time": end_time,
             "rate": rate,
@@ -255,7 +255,7 @@ def create_test_job(user: User, job_data: Optional[Dict[str, Any]] = None) -> Jo
 
     try:
         # Validate date and time
-        is_valid_date, job_date, date_error = validate_date(job_data["date"])
+        is_valid_date, job_start_date, date_error = validate_date(job_data["start_date"])
         if not is_valid_date:
             raise ValueError(f"Invalid date: {date_error}")
 
@@ -278,7 +278,7 @@ def create_test_job(user: User, job_data: Optional[Dict[str, Any]] = None) -> Jo
                 applicants_needed=job_data["applicants_needed"],
                 job_type=job_data["job_type"],
                 shift_type=job_data["shift_type"],
-                date=job_date,
+                start_date=job_start_date,
                 start_time=start_time,
                 end_time=end_time,
                 rate=job_data["rate"],

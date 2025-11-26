@@ -123,14 +123,14 @@ def sort_jobs_recent_first(jobs):
     today = date.today()
     recent_days = today - timedelta(days=2)
     def job_sort_key(job):
-        job_date = getattr(job, 'date', None)
-        if not job_date:
+        job_start_date = getattr(job, 'start_date', None)
+        if not job_start_date:
             return (2, None)  # Put jobs with no date at the end
-        if job_date == today:
-            return (0, job_date)
-        if job_date >= recent_days:
-            return (1, job_date)
-        return (2, job_date)
+        if job_start_date == today:
+            return (0, job_start_date)
+        if job_start_date >= recent_days:
+            return (1, job_start_date)
+        return (2, job_start_date)
     return sorted(jobs, key=job_sort_key)
 
 # ==
@@ -854,8 +854,11 @@ def saved_job_detail(request, job_id: int):
                 else None
             ),
             "status": saved_record.job.status,
-            "date": (
-                saved_record.job.date.isoformat() if saved_record.job.date else None
+            "start_date": (
+                saved_record.job.start_date.isoformat() if saved_record.job.start_date else None
+            ),
+            "end_date": (
+                saved_record.job.end_date.isoformat() if saved_record.job.end_date else None
             ),
             "start_time": (
                 saved_record.job.start_time.isoformat()
@@ -1217,9 +1220,14 @@ def create_job(request, payload: CreateJobSchema):
         validation_errors = {}
 
         # Validate date
-        is_valid_date, job_date, date_error = validate_date(payload.date)
+        is_valid_date, job_start_date, date_error = validate_date(payload.start_date)
         if not is_valid_date:
-            validation_errors["date"] = date_error
+            validation_errors["start_date"] = date_error
+
+        # Validate date
+        is_valid_date, job_end_date, date_error = validate_date(payload.end_date)
+        if not is_valid_date:
+            validation_errors["end_date"] = date_error
 
         # Validate times
         is_valid_start, start_time, start_error = validate_time(payload.start_time)
@@ -1256,7 +1264,8 @@ def create_job(request, payload: CreateJobSchema):
                 applicants_needed=payload.applicants_needed,
                 job_type=payload.job_type.value,
                 shift_type=payload.shift_type.value,
-                date=job_date,
+                start_date=job_start_date,
+                end_date=job_end_date,
                 start_time=start_time,
                 end_time=end_time,
                 rate=Decimal(str(payload.rate)),
@@ -1291,7 +1300,8 @@ def create_job(request, payload: CreateJobSchema):
                     "success": True,
                     "id": job.id,
                     "title": job.title,
-                    "date": job.date.isoformat(),
+                    "start_date": job.start_date.isoformat(),
+                    "end_date": job.end_date.isoformat(),
                     "start_time": job.start_time.strftime("%I:%M %p"),
                     "end_time": job.end_time.strftime("%I:%M %p"),
                     "duration_hours": round(duration_hours, 2),
@@ -1318,143 +1328,6 @@ def create_job(request, payload: CreateJobSchema):
         core_logger.error(f"Error creating job: {str(e)}", exc_info=True)
         raise InternalServerError("Failed to create job")
 
-# @core_router.put("/jobs/edit-job", tags=["Job Management"], response={200: dict, 400: dict, 404: dict, 500: dict})
-# def edit_job(request, payload: EditJobSchema):
-#     from .validation import format_validation_errors, validate_date, validate_time, validate_job_times
-#     from django_q.tasks import async_task
-#     from accounts.models import CustomUser
-#     from jobs.models import Job  # Fixed import - Job model is in jobs.models, not accounts.models
-#     from jobs.utils import resolve_industry, resolve_subcategory  # adjust to your app
-#     from django.http import JsonResponse
-
-#     # Validate job exists
-#     try:
-#         job = Job.objects.get(id=payload.job_id)
-#     except Job.DoesNotExist:
-#         return JsonResponse(
-#             {
-#                 "error": "Job not found",
-#                 "details": f"No job exists with ID {payload.job_id}",
-#                 "resolution": "Please provide a valid job ID",
-#             },
-#             status=404,
-#         )
-
-#     # Validate user exists
-#     try:
-#         user = CustomUser.objects.get(id=payload.user_id)
-#     except CustomUser.DoesNotExist:
-#         return JsonResponse(
-#             {
-#                 "error": "User not found",
-#                 "details": f"No user exists with ID {payload.user_id}",
-#                 "resolution": "Please provide a valid user ID",
-#             },
-#             status=404,
-#         )
-
-#     validation_errors = {}
-
-#     # Validate optional fields only if provided
-
-#     if payload.date:
-#         is_valid_date, job_date, date_error = validate_date(payload.date)
-#         if not is_valid_date:
-#             validation_errors["date"] = date_error
-#     else:
-#         job_date = job.date
-
-#     if payload.start_time:
-#         is_valid_start, start_time, start_error = validate_time(payload.start_time)
-#         if not is_valid_start:
-#             validation_errors["start_time"] = start_error
-#     else:
-#         start_time = job.start_time
-
-#     if payload.end_time:
-#         is_valid_end, end_time, end_error = validate_time(payload.end_time)
-#         if not is_valid_end:
-#             validation_errors["end_time"] = end_error
-#     else:
-#         end_time = job.end_time
-
-#     # Validate time relationship only if both times are valid
-#     if ('start_time' not in validation_errors and 'end_time' not in validation_errors):
-#         is_valid_times, times_error = validate_job_times(start_time, end_time)
-#         if not is_valid_times:
-#             validation_errors["time_relationship"] = times_error
-
-#     if validation_errors:
-#         return JsonResponse(format_validation_errors(validation_errors), status=400)
-
-#     try:
-#             if payload.industry is not None:
-#                 job.industry = resolve_industry(payload.industry)
-#             if payload.subcategory is not None:
-#                 job.subcategory = resolve_subcategory(payload.subcategory)
-#             if payload.applicants_needed is not None:
-#                 job.applicants_needed = payload.applicants_needed
-#             if payload.job_type is not None:
-#                 job.job_type = payload.job_type
-#             if payload.shift_type is not None:
-#                 job.shift_type = payload.shift_type
-#             job.date = job_date
-#             job.start_time = start_time
-#             job.end_time = end_time
-#             if payload.rate is not None:
-#                 job.rate = Decimal(str(payload.rate))
-#             if payload.location is not None and payload.location.strip() != job.location:
-#                 job.location = payload.location.strip()
-#                 # Dispatch geocoding if location changed
-#                 async_task("jobs.tasks.geocode_job", job.id, hook="jobs.hooks.handle_geocode_result")
-#             if payload.pay_later is not None:
-#                 job.payment_status = "pending" if payload.pay_later else "pending"  # Adjust as needed
-
-#             job.calculate_service_fee_and_total()
-#             job.save()
-
-#             duration_hours = getattr(job, "duration_hours", 0)
-#             payment_required = not payload.pay_later if payload.pay_later is not None else True
-
-#             return JsonResponse(
-#                 {
-#                     "success": True,
-#                     "job_id": job.id,
-#                     "title": job.title,
-#                     "date": job.date.isoformat(),
-#                     "start_time": job.start_time.strftime("%I:%M %p"),
-#                     "end_time": job.end_time.strftime("%I:%M %p"),
-#                     "duration_hours": round(duration_hours, 2),
-#                     "rate": str(job.rate),
-#                     "total_amount": str(job.total_amount),
-#                     "service_fee": str(job.service_fee),
-#                     "location": job.location,
-#                     "payment_required": payment_required,
-#                     "payment_status": job.payment_status,
-#                     "message": "Job updated successfully.",
-#                 },
-#                 status=200,
-#             )
-#     except ValueError as e:
-#         logger.error(f"Validation error updating job: {str(e)}")
-#         return JsonResponse(
-#             {
-#                 "error": "Validation error",
-#                 "details": str(e),
-#                 "resolution": "Please check your input and try again",
-#             },
-#             status=400,
-#         )
-#     except Exception as e:
-#         logger.error(f"Error updating job: {str(e)}", exc_info=True)
-#         return JsonResponse(
-#             {
-#                 "error": "Server error",
-#                 "message": "An unexpected error occurred while updating the job",
-#                 "reference": str(uuid.uuid4()),
-#             },
-#             status=500,
-#         )
         
 
 @log_endpoint(core_logger)
@@ -1496,12 +1369,20 @@ def edit_job(request, payload: EditJobSchema):
         validation_errors = {}
 
         # Validate optional fields
-        if payload.date:
-            is_valid_date, job_date, date_error = validate_date(payload.date)
+        if payload.start_date:
+            is_valid_date, job_start_date, date_error = validate_date(payload.start_date)
             if not is_valid_date:
-                validation_errors["date"] = date_error
+                validation_errors["start_date"] = date_error
         else:
-            job_date = job.date
+            job_start_date = job.start_date
+        # Validate optional fields
+
+        if payload.end_date:
+            is_valid_date, job_end_date, date_error = validate_date(payload.end_date)
+            if not is_valid_date:
+                validation_errors["end_date"] = date_error
+        else:
+            job_end_date = job.start_date
 
         if payload.start_time:
             is_valid_start, start_time, start_error = validate_time(payload.start_time)
@@ -1540,7 +1421,8 @@ def edit_job(request, payload: EditJobSchema):
         if payload.shift_type is not None:
             job.shift_type = payload.shift_type
 
-        job.date = job_date
+        job.start_date = job_start_date
+        job.end_date = job_end_date
         job.start_time = start_time
         job.end_time = end_time
 
@@ -1570,8 +1452,9 @@ def edit_job(request, payload: EditJobSchema):
                 "success": True,
                 "job_id": job.id,
                 "title": job.title,
-                "date": job.date.isoformat(),
-                "start_time": job.start_time.strftime("%I:%M %p"),
+                "start_date": job.start_date.isoformat(),
+                "start_date": job.end_date.isoformat(),
+                "end_time": job.start_time.strftime("%I:%M %p"),
                 "end_time": job.end_time.strftime("%I:%M %p"),
                 "duration_hours": round(duration_hours, 2),
                 "rate": str(job.rate),
