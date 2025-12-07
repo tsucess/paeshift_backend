@@ -179,7 +179,7 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'onlypayshift@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'fcyqdvjcxpfgbcab')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Payshift <onlypayshift@gmail.com>')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'onlypayshift@gmail.com')
 
 # Caching configuration - Phase 2.2c
 CACHE_ENABLED = os.getenv('CACHE_ENABLED', 'True').lower() == 'true'
