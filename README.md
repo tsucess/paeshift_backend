@@ -200,3 +200,7 @@ python manage.py migrate
 python manage.py runserver
 
 # paeshift_backend
+
+
+Paeshift
+pakf oxzl piih cyxi

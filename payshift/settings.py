@@ -197,7 +197,7 @@ if CACHE_ENABLED and REDIS_ENABLED:
                 'SOCKET_TIMEOUT': 5,
                 'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
                 'IGNORE_EXCEPTIONS': True,
-                'PARSER_CLASS': 'redis.connection.HiredisParser',
+                'PARSER  _CLASS': 'redis.connection.HiredisParser'       ,
             }
         }
     }
