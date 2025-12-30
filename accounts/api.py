@@ -305,7 +305,7 @@ def test_email(request):
                 subject='Payshift Email Test',
                 message='This is a test email from Payshift production environment.',
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=['onlypayshift@gmail.com'],  # Send to self for testing
+                recipient_list=['taofeeq.muhammad22@gmail.com'],  # Send to self for testing
                 fail_silently=False,
             )
             email_test = "SUCCESS - Test email sent"
