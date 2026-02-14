@@ -8,7 +8,7 @@ location_api = NinjaAPI(
     version="1.0.15",  # Sequential version number
     docs_url="/docs",
     openapi_url="/openapi.json",
-    csrf=True,  # Enable CSRF protection for POST/PUT/DELETE
+    # csrf=True,  # Not supported in this version of django-ninja
     urls_namespace="location_api",  # Added namespace
 )
 

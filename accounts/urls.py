@@ -11,7 +11,7 @@ accounts_api = NinjaAPI(
     version="1.0.0",  # Sequential version number
     description="Account management functionality",
     urls_namespace="accounts_api",  # Added namespace
-    csrf=False,  # Disable CSRF for development - ENABLE IN PRODUCTION!
+    # csrf=False,  # Not supported in this version of django-ninja
     auth=None,  # Make authentication optional - CONFIGURE IN PRODUCTION!
 )
 

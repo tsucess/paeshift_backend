@@ -1,0 +1,48 @@
+# Minimal Requirements for Paeshift Development
+# This is the absolute minimum to get the server running
+# Use this if requirements-dev.txt has compilation issues
+
+# Core Django
+Django==4.2.16
+djangorestframework==3.15.2
+django-ninja==1.4.3
+
+# Database (SQLite for development, no PostgreSQL needed)
+dj-database-url==2.3.0
+
+# Caching & Sessions
+django-redis==5.4.0
+redis==5.3.0
+
+# Authentication & Authorization
+djangorestframework_simplejwt==5.5.0
+django-allauth==65.7.0
+PyJWT==2.9.0
+cryptography==44.0.1
+
+# Real-time & WebSockets
+channels==4.2.2
+channels_redis==4.2.1
+daphne==4.2.0
+
+# API & Serialization
+pydantic==2.11.7
+requests==2.32.3
+
+# Forms & Validation
+django-cors-headers==3.14.0
+email_validator==2.2.0
+
+# Utilities
+python-dotenv==1.0.1
+django-environ==0.12.0
+pytz==2023.3
+
+# Testing
+pytest==8.3.5
+pytest-django==4.11.1
+
+# Note: This is the minimal set
+# For full features, use requirements-dev.txt
+# For production, use requirements.txt with Rust installed
+

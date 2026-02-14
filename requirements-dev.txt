@@ -1,0 +1,77 @@
+# Development Requirements for Paeshift
+# This file excludes granian (requires Rust compilation)
+# Use this for local development on Windows/Mac/Linux
+
+# Core Django & REST Framework
+Django==4.2.16
+djangorestframework==3.15.2
+django-ninja==1.4.3
+
+# Database
+psycopg2==2.9.10
+dj-database-url==2.3.0
+
+# Caching & Sessions
+django-redis==5.4.0
+redis==5.3.0
+
+# Authentication & Authorization
+djangorestframework_simplejwt==5.5.0
+django-allauth==65.7.0
+PyJWT==2.9.0
+python-jose==3.3.0
+cryptography==44.0.1
+
+# Real-time & WebSockets
+channels==4.2.2
+channels_redis==4.2.1
+daphne==4.2.0
+
+# Task Queue
+django-q==1.3.6
+celery==5.5.0
+
+# API & Serialization
+pydantic==2.11.7
+requests==2.32.3
+
+# Admin & UI
+django-jazzmin==2.6.0
+django-import-export==4.3.7
+
+# Forms & Validation
+django-cors-headers==3.14.0
+email_validator==2.2.0
+
+# File Handling
+pillow==11.2.1
+openpyxl==3.1.5
+
+# Geolocation
+geopy==2.4.1
+googlemaps==4.10.0
+haversine==2.9.0
+
+# Utilities
+python-dotenv==1.0.1
+django-environ==0.12.0
+python-decouple==3.8
+pytz==2023.3
+
+# Testing
+pytest==8.3.5
+pytest-django==4.11.1
+pytest-mock==3.14.0
+Faker==37.1.0
+
+# Logging & Monitoring
+python-crontab==3.2.0
+
+# Development Tools
+ipython==8.18.1
+django-extensions==3.2.3
+
+# Note: granian is excluded (requires Rust)
+# For production, use: pip install granian==2.2.4
+# Or use Docker which includes build tools
+

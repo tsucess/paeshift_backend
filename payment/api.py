@@ -57,8 +57,9 @@ from core.cache_utils import (
 # ==
 # 📌 Scheduling
 # ==
-from django_q.tasks import schedule
-from django_q.models import Schedule
+# Temporarily commented out - django_q has pkg_resources issue
+# from django_q.tasks import schedule
+# from django_q.models import Schedule
 
 logger = logging.getLogger(__name__)
 payments_router = Router(tags=["Payments"])

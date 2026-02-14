@@ -72,7 +72,8 @@ from ninja.security import HttpBearer
 import logging
 
 from celery.exceptions import CeleryError
-from django_q.tasks import async_task
+# Temporarily commented out - django_q has pkg_resources issue
+# from django_q.tasks import async_task
 
 from rating.models import Review
 

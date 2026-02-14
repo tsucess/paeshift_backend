@@ -1,0 +1,36 @@
+# Ultra-Minimal Requirements for Paeshift
+# Only the absolute essentials to get Django running
+# Install this first, then add more packages as needed
+
+# Core Django
+Django==4.2.16
+
+# REST Framework (required by settings.py)
+djangorestframework==3.15.2
+
+# CORS (required by settings.py)
+django-cors-headers==3.14.0
+
+# Channels (required by settings.py)
+channels==4.2.2
+
+# Django FSM (required by settings.py)
+django-fsm==3.0.0
+
+# Allauth (required by settings.py)
+django-allauth==65.7.0
+
+# Redis (required by settings.py)
+redis==5.3.0
+django-redis==5.4.0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# That's it! This is the absolute minimum.
+# After this works, you can add more packages:
+# - django-ninja for API
+# - pydantic for validation
+# - pytest for testing
+# - etc.
+

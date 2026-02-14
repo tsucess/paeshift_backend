@@ -27,7 +27,8 @@ from notifications.models import Notification, NotificationCategory
 from payment.models import Payment
 from .job_matching_utils import match_jobs_to_users, match_users_to_jobs
 from .utils import fallback_geocode_and_save
-from django_q.tasks import async_task
+# Temporarily commented out - django_q has pkg_resources issue
+# from django_q.tasks import async_task
 # ==
 # 📌 Local Application Imports
 # ==
@@ -171,34 +172,35 @@ def match_job_to_users_on_create(sender, instance, created, **kwargs):
         )
 
         # Use Django Q for asynchronous job matching
+        # Temporarily disabled - django_q has pkg_resources issue
+        # try:
+        #     # Queue the job matching task
+        #     async_task(
+        #         "jobs.job_matching_utils.match_jobs_to_users",
+        #         [instance],
+        #         hook="jobs.signals.handle_job_matching_results",
+        #         task_name=f"match_job_{instance.id}",
+        #         group="job_matching"
+        #     )
+        #     logger.info(f"Queued job matching task for job {instance.id}")
+        # except Exception as e:
+        #     logger.error(f"Error queuing job matching task: {e}")
+
+        # Fallback to synchronous execution if async fails
         try:
-            # Queue the job matching task
-            async_task(
-                "jobs.job_matching_utils.match_jobs_to_users",
-                [instance],
-                hook="jobs.signals.handle_job_matching_results",
-                task_name=f"match_job_{instance.id}",
-                group="job_matching"
-            )
-            logger.info(f"Queued job matching task for job {instance.id}")
-        except Exception as e:
-            logger.error(f"Error queuing job matching task: {e}")
+            # Get all active users
+            active_users = User.objects.filter(is_active=True)
+            matches = match_jobs_to_users([instance], active_users)
+            if matches:
+                for job_id, job_matches in matches.items():
+                    # Cache the matches
+                    cache_key = f"job_matches:{job_id}"
+                    cache.set(cache_key, job_matches, timeout=3600)  # Cache for 1 hour
 
-            # Fallback to synchronous execution if async fails
-            try:
-                # Get all active users
-                active_users = User.objects.filter(is_active=True)
-                matches = match_jobs_to_users([instance], active_users)
-                if matches:
-                    for job_id, job_matches in matches.items():
-                        # Cache the matches
-                        cache_key = f"job_matches:{job_id}"
-                        cache.set(cache_key, job_matches, timeout=3600)  # Cache for 1 hour
-
-                        # Send notifications for high-scoring matches
-                        send_notifications_for_matches(instance, job_matches)
-            except Exception as inner_e:
-                logger.error(f"Error in fallback job matching: {inner_e}")
+                    # Send notifications for high-scoring matches
+                    send_notifications_for_matches(instance, job_matches)
+        except Exception as inner_e:
+            logger.error(f"Error in fallback job matching: {inner_e}")
 
 
 def handle_job_matching_results(task):
