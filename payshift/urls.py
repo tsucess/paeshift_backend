@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin/docs/', include('django.contrib.admindocs.urls')),
 
     # API Documentation
     # TODO: Add drf_spectacular documentation endpoints when package is installed

@@ -9,6 +9,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Python 3.14 compatibility fix for Django template context
+try:
+    import django_python314_fix  # noqa: F401
+except ImportError:
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,6 +32,7 @@ APPEND_SLASH = False  # Prevent automatic trailing slash redirects
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -171,6 +178,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000').split(',')
+CSRF_USE_SESSIONS = True  # Store CSRF token in session instead of cookie for better security
 
 # Email configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
@@ -197,7 +205,7 @@ if CACHE_ENABLED and REDIS_ENABLED:
                 'SOCKET_TIMEOUT': 5,
                 'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
                 'IGNORE_EXCEPTIONS': True,
-                'PARSER  _CLASS': 'redis.connection.HiredisParser'       ,
+                'PARSER_CLASS': 'redis.connection.HiredisParser',
             }
         }
     }
