@@ -15,9 +15,11 @@ services:
       - key: FORCE_SQLITE
         value: "True"
       - key: DJANGO_ALLOWED_HOSTS
-        value: "localhost,127.0.0.1,paeshift-backend-rwp3.onrender.com"
+        value: "localhost,127.0.0.1,paeshift-backend-oeon.onrender.com"
       - key: CORS_ALLOWED_ORIGINS
         value: "https://paeshift-frontend.onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://paeshift-backend-oeon.onrender.com,https://paeshift-frontend.onrender.com"
     healthCheckPath: /api/health/
     healthCheckInterval: 30
     maxShutdownDelay: 30

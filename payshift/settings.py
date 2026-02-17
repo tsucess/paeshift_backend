@@ -181,15 +181,29 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000').split(',')
 CSRF_USE_SESSIONS = True  # Store CSRF token in session instead of cookie for better security
+CSRF_COOKIE_SECURE = os.getenv('DJANGO_DEBUG', 'True').lower() == 'false'  # Secure in production
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token for AJAX requests
+CSRF_COOKIE_SAMESITE = 'Lax'  # Allow CSRF cookies in cross-origin requests
 
 # Session configuration for cross-origin requests
 SESSION_COOKIE_SAMESITE = 'Lax'  # Allow session cookies in cross-origin requests
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript from accessing the session cookie
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE = os.getenv('DJANGO_DEBUG', 'True').lower() == 'false'  # Secure in production (HTTPS)
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session alive after browser closes
 
