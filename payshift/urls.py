@@ -5,8 +5,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import health_check
 
 urlpatterns = [
+    # Root health check endpoint
+    path('', health_check, name='health_check'),
+
     path('admin/', admin.site.urls),
     path('admin/docs/', include('django.contrib.admindocs.urls')),
 

@@ -246,6 +246,23 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 BASE_URL = os.getenv("BASE_URL")
 
+# Google OAuth Configuration for django-allauth
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': os.getenv('GOOGLE_OAUTH_CLIENT_ID', '156251530744-s1jbmhd87adjr99fapotk30p4sgb5mr2.apps.googleusercontent.com'),
+            'secret': os.getenv('GOOGLE_OAUTH_SECRET', ''),
+            'key': 'google'
+        }
+    }
+}
 
 # Godmode API Token
 GODMODE_API_TOKEN = os.getenv("GODMODE_API_TOKEN", "godmode-secret-token-change-in-production")

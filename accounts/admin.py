@@ -118,7 +118,7 @@ def delete_users_with_cascade(modeladmin, request, queryset):
                 logger.info(f"About to delete user object: {user_email} (ID: {user_id})")
                 user.delete()
                 deleted_count += 1
-                logger.info(f"✅ Successfully deleted user: {user_email} (ID: {user_id})")
+                logger.info(f"[SUCCESS] Successfully deleted user: {user_email} (ID: {user_id})")
 
         except Exception as e:
             error_count += 1
@@ -132,7 +132,7 @@ def delete_users_with_cascade(modeladmin, request, queryset):
     if deleted_count > 0:
         modeladmin.message_user(
             request,
-            f"✅ Successfully deleted {deleted_count} user(s) and all related data.",
+            f"[SUCCESS] Successfully deleted {deleted_count} user(s) and all related data.",
             messages.SUCCESS
         )
 
@@ -140,14 +140,14 @@ def delete_users_with_cascade(modeladmin, request, queryset):
         error_details = "\n".join(errors)
         modeladmin.message_user(
             request,
-            f"❌ Failed to delete {error_count} user(s):\n{error_details}",
+            f"[ERROR] Failed to delete {error_count} user(s):\n{error_details}",
             messages.ERROR
         )
 
     if deleted_count == 0 and error_count == 0:
         modeladmin.message_user(
             request,
-            "⚠️ No users were selected for deletion.",
+            "[WARNING] No users were selected for deletion.",
             messages.WARNING
         )
 
