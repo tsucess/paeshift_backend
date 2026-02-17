@@ -1,4 +1,4 @@
-# 📌 Python Standard Library Imports
+# [MARKER] Python Standard Library Imports
 # ==
 import logging
 import os
@@ -40,7 +40,7 @@ from .models import CustomUser, OTP
 
 
 # ==
-# 📌 Caching Imports for Phase 2.2c
+# [MARKER] Caching Imports for Phase 2.2c
 # ==
 from core.cache_utils import (
     cache_api_response,
@@ -50,7 +50,7 @@ from core.cache_utils import (
 from core.dummy_decorators import time_view, hibernate, log_operation
 
 # ==
-# 📌 Local Application Imports
+# [MARKER] Local Application Imports
 # ==
 from .models import CustomUser as User
 from .models import Profile, Role, UserActivityLog, TrustedDevice, ProfilePicture
@@ -59,7 +59,7 @@ from .utils import get_user_response
 # from .user_activity import get_active_users, get_user_last_seen  # Temporarily commented out
 from django.http import JsonResponse
 # ==
-# 📌 Setup
+# [MARKER] Setup
 # ==
 # Initialize channel_layer lazily to avoid import errors
 channel_layer = None
@@ -68,7 +68,7 @@ logger = logging.getLogger(__name__)
 accounts_router = Router(tags=["Core"])
 
 # ==
-# 📌 Local Schemas (for backward compatibility)
+# [MARKER] Local Schemas (for backward compatibility)
 # ==
 class MessageResponse(BaseModel):
     """Response schema with a message"""
@@ -134,7 +134,7 @@ VALID_ROLES = ["applicant", "client", "admin"]
 
 
 # ==
-# 📌 API Endpoints
+# [MARKER] API Endpoints
 # ==
 
 
@@ -557,18 +557,19 @@ def signup_view(request, payload: SignupSchema):
             )
 
             # Request OTP
-            logger.info(f"🔄 Requesting OTP for email: {payload.email}")
+            logger.info(f"[OTP] Requesting OTP for email: {payload.email}")
+            logger.info(f"[OTP] OTP payload: email={otp_payload.email}, type={otp_payload.type}, phone={otp_payload.phone}")
             otp_response = request_otp(request, otp_payload)
-            logger.info(f"📧 OTP request response: {otp_response}")
+            logger.info(f"[OTP] OTP request response: {otp_response}")
 
             # Store user ID in session for verification
             request.session['registration_user_id'] = user.id
 
-            logger.info(f"✅ Verification OTP process completed for {payload.email}")
+            logger.info(f"[OTP] Verification OTP process completed for {payload.email}")
         except Exception as e:
-            logger.error(f"❌ Error sending verification OTP to {payload.email}: {str(e)}")
+            logger.error(f"[OTP] Error sending verification OTP to {payload.email}: {str(e)}")
             import traceback
-            logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+            logger.error(f"[OTP] Full traceback: {traceback.format_exc()}")
             # Continue anyway - user can request OTP again
 
         # Get role from user model or profile
@@ -841,7 +842,7 @@ def get_profile(request, user_id: int):
         return 500, ErrorOut(error=f"An error occurred: {str(e)}")
 
 
-# ✅ Extra endpoint that supports /profile?user_id=3
+# [SUCCESS] Extra endpoint that supports /profile?user_id=3
 @accounts_router.get(
     "/profile",
     tags=["User"],
@@ -1099,7 +1100,7 @@ def user_profile_pictures_full(request, user_id: int):
 
 
 # ==
-# 📌 Security Endpoints
+# [MARKER] Security Endpoints
 # ==
 @accounts_router.post(
     "/verify-sensitive-operation",
@@ -1243,7 +1244,7 @@ def toggle_2fa(request, payload: Toggle2FASchema):
 
 
 # ==
-# 📌 Auth Endpoints
+# [MARKER] Auth Endpoints
 # ==
 
 @log_endpoint(core_logger)
@@ -1447,15 +1448,24 @@ def verify_registration(request, payload: OTPVerifySchema):
         )
 
         # Verify OTP
+        core_logger.info(f"[VERIFY_REG] Calling verify_otp for email: {email}")
         status_code, response = verify_otp(request, verify_payload)
+        core_logger.info(f"[VERIFY_REG] verify_otp returned status: {status_code}, response: {response}")
 
         if status_code != 200:
             # Return the error from verify_otp
+            core_logger.warning(f"[VERIFY_REG] OTP verification failed with status {status_code}")
             return status_code, response
 
         # OTP is valid - activate the user
+        core_logger.info(f"[VERIFY_REG] OTP verified successfully. Activating user {user.id} ({email})")
         user.is_active = True
         user.save()
+        core_logger.info(f"[VERIFY_REG] User {user.id} is_active set to: {user.is_active}")
+
+        # Verify the change was saved
+        user.refresh_from_db()
+        core_logger.info(f"[VERIFY_REG] After refresh_from_db, user {user.id} is_active: {user.is_active}")
 
         # Log the activity (with error handling)
         try:
@@ -1892,12 +1902,12 @@ def whoami(request, user_id: int):
         user = User.objects.get(id=user_id)
         profile, _ = Profile.objects.get_or_create(user=user)
 
-        # ✅ Profile picture
+        # [SUCCESS] Profile picture
         from accounts.models import ProfilePicture
         active_pic = ProfilePicture.objects.filter(profile=profile, is_active=True).first()
         pic_url = active_pic.image.url if active_pic and active_pic.image else ""
 
-        # ✅ Account details (if exist)
+        # [SUCCESS] Account details (if exist)
         account_details = None
         if hasattr(profile, "account_details") and profile.account_details:
             # account_details is a JSONField (dictionary), not an object
@@ -1907,7 +1917,7 @@ def whoami(request, user_id: int):
                 "account_holder": profile.account_details.get("account_holder", user.get_full_name()),
             }
 
-        # ✅ Calculate real statistics
+        # [SUCCESS] Calculate real statistics
         from jobs.models import Job, Application
         from django.db.models import Count, Q
 
@@ -1966,7 +1976,7 @@ def whoami(request, user_id: int):
                 "total_applied_jobs": total_applied_jobs,
                 "total_employers_worked_with": total_employers_worked_with,
             },
-            # ✅ Include account details
+            # [SUCCESS] Include account details
             "account_details": account_details,
         }
 
@@ -2129,7 +2139,7 @@ def whoami(request, user_id: int):
 
 
 # ==
-# 📌 User Activity Endpoints
+# [MARKER] User Activity Endpoints
 # ==
 
 # Temporarily commented out - depends on gamification app

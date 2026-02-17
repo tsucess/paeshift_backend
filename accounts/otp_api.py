@@ -23,8 +23,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from ninja import Router
 from ninja.security import HttpBearer
 
-from .models import OTP, Profile, UserActivityLog
-from .utils import generate_otp, send_otp_email, send_otp_sms, rate_limit_otp_requests
+from .models import OTP, TemporaryOTP, Profile, UserActivityLog
+from .utils import generate_otp, send_otp_email, send_otp_sms, rate_limit_otp_requests, send_mail_to_nonuser
 from .schemas import MessageOut, OTPRequestSchema, OTPVerifySchema, DeviceInfoSchema
 
 # Initialize logger
@@ -68,7 +68,11 @@ def request_otp(request, payload: OTPRequestSchema):
         otp_type = payload.type
         phone = payload.phone
         operation = payload.operation
-        
+
+        logger.info(f"[OTP] request_otp called with email={email}, type={otp_type}, phone={phone}")
+        logger.info(f"[OTP] OTP_TYPE_REGISTRATION constant value: {OTP_TYPE_REGISTRATION}")
+        logger.info(f"[OTP] Comparing: otp_type ({repr(otp_type)}) == OTP_TYPE_REGISTRATION ({repr(OTP_TYPE_REGISTRATION)}) = {otp_type == OTP_TYPE_REGISTRATION}")
+
         # Validate OTP type
         valid_types = [
             OTP_TYPE_REGISTRATION, 
@@ -82,12 +86,10 @@ def request_otp(request, payload: OTPRequestSchema):
             logger.warning(f"Invalid OTP type requested: {otp_type}")
             return 400, {"message": f"Invalid OTP type. Must be one of: {', '.join(valid_types)}"}
         
-        # For registration, check if email already exists
+        # For registration, we still need to send OTP even if user exists
+        # (user is created before OTP is requested in signup flow)
         if otp_type == OTP_TYPE_REGISTRATION:
-            if User.objects.filter(email=email).exists():
-                logger.info(f"Registration OTP requested for existing email: {email}")
-                # Don't reveal that the email exists for security reasons
-                return 200, {"message": "If the email exists, an OTP has been sent."}
+            logger.info(f"Registration OTP requested for email: {email}")
         
         # For other types, verify the user exists
         elif not User.objects.filter(email=email).exists():
@@ -152,19 +154,31 @@ def request_otp(request, payload: OTPRequestSchema):
                 ip_address=request.META.get("REMOTE_ADDR")
             )
         else:
-            # For registration, we don't have a user yet, so just send the email
+            # For registration, we don't have a user yet, so use TemporaryOTP model
             if otp_type == OTP_TYPE_REGISTRATION:
-                # Store OTP in session for later verification
-                request.session["registration_otp"] = {
-                    "code": otp_code,
-                    "email": email,
-                    "created_at": timezone.now().isoformat(),
-                    "metadata": metadata
-                }
-                
-                # Send OTP via email
-                send_mail_to_nonuser(email, otp_code)
-                
+                # Delete any existing OTPs for this email
+                TemporaryOTP.objects.filter(email=email, otp_type=otp_type).delete()
+
+                # Create new temporary OTP in database
+                temp_otp = TemporaryOTP.objects.create(
+                    email=email,
+                    code=otp_code,
+                    otp_type=otp_type,
+                    metadata=json.dumps(metadata)
+                )
+                logger.info(f"[OTP] Created TemporaryOTP in database for {email}, ID: {temp_otp.id}")
+
+                # Send OTP via email with retry logic
+                email_sent = send_mail_to_nonuser(email, otp_code)
+                if not email_sent:
+                    logger.warning(f"Initial email send failed for {email}, will retry")
+                    # Attempt retry after short delay
+                    import time
+                    time.sleep(2)
+                    email_sent = send_mail_to_nonuser(email, otp_code)
+                    if not email_sent:
+                        logger.error(f"Failed to send OTP email to {email} after retry")
+
                 # Send OTP via SMS if phone number is provided
                 if phone:
                     send_otp_sms(phone, otp_code)
@@ -201,35 +215,40 @@ def verify_otp(request, payload: OTPVerifySchema):
         
         # For registration OTP verification
         if otp_type == OTP_TYPE_REGISTRATION:
-            # Get OTP from session
-            registration_otp = request.session.get("registration_otp")
-            
-            if not registration_otp:
-                logger.warning(f"No registration OTP found in session for {email}")
+            logger.info(f"[OTP_VERIFY] Looking for registration OTP for {email}")
+            # Get OTP from database
+            temp_otp = TemporaryOTP.objects.filter(
+                email=email,
+                otp_type=otp_type
+            ).order_by('-created_at').first()
+
+            if not temp_otp:
+                logger.warning(f"[OTP_VERIFY] No registration OTP found in database for {email}")
                 return 400, {"message": "No OTP found. Please request a new one."}
-            
-            # Verify email matches
-            if registration_otp["email"] != email:
-                logger.warning(f"Email mismatch in registration OTP verification: {email}")
-                return 401, {"message": "Invalid OTP."}
-            
+
+            logger.info(f"[OTP_VERIFY] Found OTP for {email}, ID: {temp_otp.id}, is_verified: {temp_otp.is_verified}")
+
+            # Check if OTP is valid (not expired, not too many attempts)
+            if not temp_otp.is_valid():
+                logger.warning(f"[OTP_VERIFY] Registration OTP is invalid (expired or too many attempts) for {email}")
+                return 401, {"message": "OTP has expired or too many attempts. Please request a new one."}
+
             # Verify code
-            if registration_otp["code"] != code:
-                logger.warning(f"Invalid registration OTP code for {email}")
+            if temp_otp.code != code:
+                logger.warning(f"[OTP_VERIFY] Invalid registration OTP code for {email}. Expected: {temp_otp.code}, Got: {code}")
+                temp_otp.increment_attempts()
                 return 401, {"message": "Invalid OTP."}
-            
-            # Verify not expired
-            created_at = timezone.datetime.fromisoformat(registration_otp["created_at"])
-            if timezone.now() > created_at + timedelta(minutes=OTP.EXPIRY_MINUTES):
-                logger.warning(f"Expired registration OTP for {email}")
-                return 401, {"message": "OTP has expired. Please request a new one."}
-            
+
+            logger.info(f"[OTP_VERIFY] OTP code matches for {email}. Marking as verified and deleting.")
             # OTP is valid for registration
-            # Clear the OTP from session
-            del request.session["registration_otp"]
-            
+            # Mark as verified and delete
+            temp_otp.mark_as_verified()
+            temp_otp.delete()
+            logger.info(f"[OTP] Registration OTP verified successfully for {email}")
+
             # Return success with verification token
             verification_token = generate_verification_token(email, otp_type)
+            logger.info(f"[OTP_VERIFY] Generated verification token for {email}")
             return 200, {
                 "message": "OTP verified successfully.",
                 "verification_token": verification_token
@@ -309,33 +328,6 @@ def verify_otp(request, payload: OTPVerifySchema):
 
 
 # Helper functions
-
-def send_mail_to_nonuser(email, otp_code):
-    """Send OTP email to a non-user (for registration)"""
-    from django.core.mail import send_mail
-    from django.conf import settings
-    
-    try:
-        send_mail(
-            subject="Your Registration Verification Code",
-            message=(
-                f"Hello,\n\n"
-                f"Your verification code for account registration is: {otp_code}\n\n"
-                f"This code will expire in 5 minutes.\n\n"
-                f"If you did not request this code, please ignore this email.\n\n"
-                f"Do not share this code with anyone.\n\n"
-                f"Regards,\nThe Security Team"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-        logger.info(f"Registration OTP email sent to {email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send registration OTP email to {email}: {str(e)}")
-        return False
-
 
 def generate_verification_token(email, otp_type):
     """Generate a verification token for the given email and OTP type"""

@@ -39,7 +39,7 @@ def generate_otp():
 def send_otp_email(user, otp_code):
     """Send OTP via email with beautiful HTML template"""
     try:
-        logger.info(f"📧 Starting email send process for {user.email} with OTP: {otp_code}")
+        logger.info(f"[EMAIL] Starting email send process for {user.email} with OTP: {otp_code}")
         subject = "Verify Your Email - Payshift"
 
         # HTML email template
@@ -77,7 +77,7 @@ def send_otp_email(user, otp_code):
                     <p>Enter this code on the verification page to activate your account.</p>
 
                     <div class="warning">
-                        <strong>⏰ This code will expire in 10 minutes</strong><br>
+                        <strong>[TIME] This code will expire in 10 minutes</strong><br>
                         If you didn't create an account with Payshift, please ignore this email.
                     </div>
                 </div>
@@ -112,14 +112,14 @@ def send_otp_email(user, otp_code):
         from django.core.mail import EmailMultiAlternatives
         from django.conf import settings
 
-        logger.info(f"📬 Email backend: {settings.EMAIL_BACKEND}")
-        logger.info(f"📬 From email: {settings.DEFAULT_FROM_EMAIL}")
-        logger.info(f"📬 To email: {user.email}")
-        logger.info(f"📬 SMTP Host: {settings.EMAIL_HOST}")
-        logger.info(f"📬 SMTP Port: {settings.EMAIL_PORT}")
-        logger.info(f"📬 SMTP User: {settings.EMAIL_HOST_USER}")
-        logger.info(f"📬 SMTP Password: {'*' * len(settings.EMAIL_HOST_PASSWORD)} (length: {len(settings.EMAIL_HOST_PASSWORD)})")
-        logger.info(f"📬 SMTP TLS: {settings.EMAIL_USE_TLS}")
+        logger.info(f"[EMAIL] Email backend: {settings.EMAIL_BACKEND}")
+        logger.info(f"[EMAIL] From email: {settings.DEFAULT_FROM_EMAIL}")
+        logger.info(f"[EMAIL] To email: {user.email}")
+        logger.info(f"[EMAIL] SMTP Host: {settings.EMAIL_HOST}")
+        logger.info(f"[EMAIL] SMTP Port: {settings.EMAIL_PORT}")
+        logger.info(f"[EMAIL] SMTP User: {settings.EMAIL_HOST_USER}")
+        logger.info(f"[EMAIL] SMTP Password: {'*' * len(settings.EMAIL_HOST_PASSWORD)} (length: {len(settings.EMAIL_HOST_PASSWORD)})")
+        logger.info(f"[EMAIL] SMTP TLS: {settings.EMAIL_USE_TLS}")
 
         msg = EmailMultiAlternatives(
             subject,
@@ -129,16 +129,96 @@ def send_otp_email(user, otp_code):
         )
         msg.attach_alternative(html_message, "text/html")
 
-        logger.info(f"📤 Sending email message...")
+        logger.info(f"[EMAIL] Sending email message...")
         msg.send()
-        logger.info(f"✅ Email sent successfully!")
+        logger.info(f"[EMAIL] Email sent successfully!")
 
-        logger.info(f"📧 OTP email sent to {user.email}")
+        logger.info(f"[EMAIL] OTP email sent to {user.email}")
         return True
     except Exception as e:
-        logger.error(f"❌ Failed to send OTP email to {user.email}: {str(e)}")
+        logger.error(f"[EMAIL] Failed to send OTP email to {user.email}: {str(e)}")
         import traceback
-        logger.error(f"📋 Email error traceback: {traceback.format_exc()}")
+        logger.error(f"[EMAIL] Email error traceback: {traceback.format_exc()}")
+        return False
+
+
+def send_mail_to_nonuser(email, otp_code):
+    """Send OTP email to a non-user (for registration) with enhanced error handling"""
+    from django.core.mail import EmailMultiAlternatives
+
+    logger.info(f"[EMAIL] send_mail_to_nonuser called with email={email}, otp_code={otp_code}")
+
+    try:
+        # Validate email
+        if not email or '@' not in email:
+            logger.error(f"[EMAIL] Invalid email address: {email}")
+            return False
+
+        # Create HTML email template
+        html_message = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h2 style="color: #333; margin-bottom: 20px;">Welcome to Paeshift!</h2>
+                    <p style="color: #666; font-size: 16px; line-height: 1.6;">
+                        To complete your registration, please verify your email address using the code below:
+                    </p>
+                    <div style="background-color: #f0f0f0; padding: 20px; border-radius: 5px; text-align: center; margin: 30px 0;">
+                        <p style="font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 5px; margin: 0;">
+                            {otp_code}
+                        </p>
+                    </div>
+                    <p style="color: #666; font-size: 14px;">
+                        This code will expire in 5 minutes.
+                    </p>
+                    <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                        If you did not request this code, please ignore this email.<br>
+                        Do not share this code with anyone.
+                    </p>
+                    <p style="color: #999; font-size: 12px;">
+                        Best regards,<br>
+                        The Paeshift Security Team
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+
+        plain_message = (
+            f"Hello,\n\n"
+            f"Your verification code for account registration is: {otp_code}\n\n"
+            f"This code will expire in 5 minutes.\n\n"
+            f"If you did not request this code, please ignore this email.\n\n"
+            f"Do not share this code with anyone.\n\n"
+            f"Regards,\nThe Paeshift Security Team"
+        )
+
+        logger.info(f"[EMAIL] Attempting to send OTP email to {email}")
+        logger.info(f"[EMAIL] Email backend: {settings.EMAIL_BACKEND}")
+        logger.info(f"[EMAIL] SMTP Host: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+
+        msg = EmailMultiAlternatives(
+            subject="Your Registration Verification Code - Paeshift",
+            body=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[email]
+        )
+        msg.attach_alternative(html_message, "text/html")
+
+        # Send with error handling
+        result = msg.send(fail_silently=False)
+
+        if result > 0:
+            logger.info(f"[EMAIL] Registration OTP email sent successfully to {email}")
+            return True
+        else:
+            logger.warning(f"[EMAIL] Email send returned 0 for {email}")
+            return False
+
+    except Exception as e:
+        logger.error(f"[EMAIL] Failed to send registration OTP email to {email}: {str(e)}")
+        import traceback
+        logger.error(f"[EMAIL] Email error traceback: {traceback.format_exc()}")
         return False
 
 

@@ -113,6 +113,89 @@ class OTP(models.Model):
         ]
 
 
+class TemporaryOTP(models.Model):
+    """
+    Temporary OTP model for registration and other flows that don't have a user yet.
+
+    This model stores OTP codes indexed by email instead of user ID, allowing
+    OTP verification before user account creation.
+    """
+    email = models.EmailField(max_length=255, db_index=True)
+    code = models.CharField(max_length=6)
+    otp_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('registration', 'Registration'),
+            ('password_reset', 'Password Reset'),
+            ('login', 'Login'),
+        ],
+        default='registration'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    attempts = models.IntegerField(default=0)
+    is_verified = models.BooleanField(default=False)
+    metadata = models.TextField(blank=True, null=True, help_text="JSON metadata for the OTP")
+
+    # Constants for OTP settings
+    MAX_ATTEMPTS = 5
+    EXPIRY_MINUTES = 5
+
+    def is_valid(self):
+        """Check if OTP is still valid (not expired and not too many attempts)"""
+        # Check if already verified
+        if self.is_verified:
+            return False
+
+        # Check if too many attempts
+        if self.attempts >= self.MAX_ATTEMPTS:
+            return False
+
+        # Check if expired
+        return timezone.now() <= self.created_at + timedelta(minutes=self.EXPIRY_MINUTES)
+
+    def increment_attempts(self):
+        """Increment the number of failed attempts"""
+        self.attempts += 1
+        self.save()
+        return self.attempts >= self.MAX_ATTEMPTS
+
+    def mark_as_verified(self):
+        """Mark this OTP as successfully verified"""
+        self.is_verified = True
+        self.save()
+
+    def get_metadata(self):
+        """Get the metadata as a dictionary"""
+        if not self.metadata:
+            return {}
+        try:
+            return json.loads(self.metadata)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    def set_metadata(self, metadata_dict):
+        """Set the metadata from a dictionary"""
+        if not isinstance(metadata_dict, dict):
+            raise ValueError("Metadata must be a dictionary")
+        self.metadata = json.dumps(metadata_dict)
+        self.save()
+
+    @classmethod
+    def cleanup_expired_otps(cls):
+        """Delete expired OTPs"""
+        expiry_time = timezone.now() - timedelta(minutes=cls.EXPIRY_MINUTES)
+        return cls.objects.filter(created_at__lt=expiry_time).delete()
+
+    class Meta:
+        verbose_name = "Temporary OTP"
+        verbose_name_plural = "Temporary OTPs"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['email', 'otp_type']),
+            models.Index(fields=['is_verified']),
+            models.Index(fields=['created_at']),
+        ]
 
 
 class CustomUserManager(BaseUserManager):

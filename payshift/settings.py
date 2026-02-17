@@ -71,6 +71,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -111,7 +112,9 @@ if FORCE_SQLITE:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / os.getenv('SQLITE_DB_PATH', 'db.sqlite3'),
-            'OPTIONS': {'timeout': 20},
+            'OPTIONS': {
+                'timeout': 20,
+            },
         }
     }
 else:
@@ -162,6 +165,9 @@ STATICFILES_DIRS = [
     # BASE_DIR / 'static',
 ]
 
+# WhiteNoise configuration for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -180,6 +186,13 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000').split(',')
 CSRF_USE_SESSIONS = True  # Store CSRF token in session instead of cookie for better security
 
+# Session configuration for cross-origin requests
+SESSION_COOKIE_SAMESITE = 'Lax'  # Allow session cookies in cross-origin requests
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript from accessing the session cookie
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session alive after browser closes
+
 # Email configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
@@ -188,6 +201,7 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'taofeeq.muhammad22@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'pakfoxzlpiihcyxi')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'taofeeq.muhammad22@gmail.com')
+EMAIL_FILE_PATH = os.getenv('EMAIL_FILE_PATH', os.path.join(BASE_DIR, 'emails'))
 
 # Caching configuration - Phase 2.2c
 CACHE_ENABLED = os.getenv('CACHE_ENABLED', 'True').lower() == 'true'

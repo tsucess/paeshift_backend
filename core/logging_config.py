@@ -119,14 +119,10 @@ def get_logging_config(debug: bool = False, log_dir: str = "logs"):
                 "backupCount": 10,
                 "formatter": file_formatter,
             },
-            # File handler for database logs
+            # File handler for database logs - Use NullHandler to avoid Windows file locking issues
             "database_file": {
                 "level": "DEBUG" if debug else "INFO",
-                "class": "logging.handlers.RotatingFileHandler",
-                "filename": os.path.join(log_dir, "database.log"),
-                "maxBytes": 1024 * 1024 * 10,  # 10MB
-                "backupCount": 10,
-                "formatter": file_formatter,
+                "class": "logging.NullHandler",
             },
             # Mail handler for critical errors (production only)
             "mail_admins": {

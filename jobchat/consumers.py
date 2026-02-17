@@ -68,18 +68,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
 class JobLocationConsumer(AsyncWebsocketConsumer):
-    """Handles real-time job location tracking"""
+    """Handles real-time job location tracking for applicants and job owners"""
 
     async def connect(self):
         self.job_id = self.scope["url_route"]["kwargs"]["job_id"]
         self.group_name = f"job_{self.job_id}"
+        self.user = self.scope.get("user")
+
+        # Add user to the location tracking group
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        logger.info(f"Location WebSocket connected: {self.channel_name}")
+
+        # Log connection with user info
+        user_info = f"User {self.user.id} ({self.user.email})" if self.user and self.user.is_authenticated else "Anonymous"
+        logger.info(f"✅ Location WebSocket connected: {self.channel_name} - {user_info} for Job #{self.job_id}")
+
+        # Send connection confirmation to client
+        await self.send(text_data=json.dumps({
+            "type": "connection_established",
+            "job_id": self.job_id,
+            "message": "Location tracking connection established"
+        }))
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
-        logger.info(f"Location WebSocket disconnected: {self.channel_name}")
+        user_info = f"User {self.user.id}" if self.user and self.user.is_authenticated else "Anonymous"
+        logger.info(f"❌ Location WebSocket disconnected: {self.channel_name} - {user_info}")
 
     async def receive(self, text_data):
         """Processes received location data"""
@@ -97,7 +111,7 @@ class JobLocationConsumer(AsyncWebsocketConsumer):
             await self.process_location(user, latitude, longitude)
 
     async def process_location(self, user, latitude, longitude):
-        """Saves or updates the user's location"""
+        """Saves or updates the user's location and broadcasts to all connected users"""
         current_time = datetime.utcnow()
         last_location = await self.get_last_location(user)
 
@@ -110,13 +124,18 @@ class JobLocationConsumer(AsyncWebsocketConsumer):
         else:
             await self.save_location(user, latitude, longitude, current_time)
 
+        # Broadcast location update to all users in the job group
+        # Include user identification so frontend can distinguish applicant from job owner
         await self.channel_layer.group_send(
             self.group_name,
             {
                 "type": "location_update",
                 "latitude": latitude,
                 "longitude": longitude,
-                "user": user.username,
+                "user_id": user.id,
+                "username": user.username,
+                "user_email": user.email,
+                "timestamp": current_time.isoformat(),
             },
         )
 
