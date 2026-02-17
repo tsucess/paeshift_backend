@@ -11,8 +11,9 @@ urlpatterns = [
     # Root health check endpoint
     path('', health_check, name='health_check'),
 
-    path('admin/', admin.site.urls),
+    # Admin documentation must come BEFORE admin site to avoid catch-all pattern
     path('admin/docs/', include('django.contrib.admindocs.urls')),
+    path('admin/', admin.site.urls),
 
     # API Documentation
     # TODO: Add drf_spectacular documentation endpoints when package is installed
