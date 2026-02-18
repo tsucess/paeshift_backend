@@ -43,7 +43,6 @@ defusedxml==0.7.1
 diff-match-patch==20241021
 distlib==0.3.9
 dj-database-url==2.3.0
-Django==4.2.16
 django-allauth==65.7.0
 django-anymail==9.1
 django-ckeditor==6.7.0
