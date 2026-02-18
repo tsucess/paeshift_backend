@@ -137,10 +137,16 @@ def request_otp(request, payload: OTPRequestSchema):
                 code=otp_code,
                 metadata=json.dumps(metadata)
             )
-            
-            # Send OTP via email
-            send_otp_email(user, otp_code)
-            
+
+            # Send OTP via email asynchronously (non-blocking)
+            try:
+                from .tasks import send_otp_email_async
+                send_otp_email_async.delay(user.id, otp_code)
+                logger.info(f"[OTP] Queued async email send for {user.email}")
+            except Exception as e:
+                # Don't block on email failure
+                logger.warning(f"[OTP] Failed to queue async email task for {user.email}: {str(e)}")
+
             # Send OTP via SMS if phone number is available
             if phone:
                 send_otp_sms(phone, otp_code)
@@ -168,16 +174,16 @@ def request_otp(request, payload: OTPRequestSchema):
                 )
                 logger.info(f"[OTP] Created TemporaryOTP in database for {email}, ID: {temp_otp.id}")
 
-                # Send OTP via email with retry logic
-                email_sent = send_mail_to_nonuser(email, otp_code)
-                if not email_sent:
-                    logger.warning(f"Initial email send failed for {email}, will retry")
-                    # Attempt retry after short delay
-                    import time
-                    time.sleep(2)
-                    email_sent = send_mail_to_nonuser(email, otp_code)
-                    if not email_sent:
-                        logger.error(f"Failed to send OTP email to {email} after retry")
+                # Send OTP via email asynchronously (non-blocking)
+                try:
+                    from .tasks import send_registration_otp_email_async
+                    # Queue the email sending task to run in the background
+                    send_registration_otp_email_async.delay(email, otp_code)
+                    logger.info(f"[OTP] Queued async email send for {email}")
+                except Exception as e:
+                    # Don't block on email failure - user can request OTP again
+                    logger.warning(f"[OTP] Failed to queue async email task for {email}: {str(e)}")
+                    logger.info(f"[OTP] User can request OTP again via /request endpoint")
 
                 # Send OTP via SMS if phone number is provided
                 if phone:

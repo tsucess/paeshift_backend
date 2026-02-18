@@ -103,37 +103,34 @@ def create_status_notification(user, entity_type, entity_title, old_status, new_
 def handle_user_creation(sender, instance, created, **kwargs):
     """
     Handles notifications for user account creation and updates.
+
+    For new user creation, queues notifications asynchronously to avoid blocking signup.
+    For account status changes, creates notifications synchronously.
     """
     try:
         update_fields = _safe_update_fields(kwargs)
-        with transaction.atomic():
-            if created:
-                create_notification(
-                    user=instance,
-                    title="[SUCCESS] Welcome Aboard!",
-                    message=f"Hi {instance.get_full_name()}, we're thrilled you're here! Complete your profile to unlock all features.",
-                    notification_type="account_welcome",
-                    importance="high"
-                )
 
-                admins = User.objects.filter(is_staff=True).values_list('id', flat=True)
-                for admin_id in admins:
-                    create_notification(
-                        user=User.objects.get(pk=admin_id),
-                        title="[INFO] New User Joined",
-                        message=f"A new user, {instance.get_full_name()} ({instance.email}), just signed up!",
-                        notification_type="admin_new_user",
-                        importance="medium"
-                    )
-            elif not instance._state.adding and 'is_active' in update_fields:
-                status = "activated" if instance.is_active else "deactivated"
-                create_notification(
-                    user=instance,
-                    title=f"[ACCOUNT] Account {status.capitalize()}",
-                    message=f"Your account is now {status}, {instance.get_full_name()}. {'' if instance.is_active else 'Need assistance? Contact support.'}",
-                    notification_type=f"account_{status}",
-                    importance="high"
-                )
+        if created:
+            # Queue notification creation asynchronously to avoid blocking signup
+            try:
+                from accounts.tasks import handle_new_user_notifications_async
+                logger.info(f"[SIGNAL] Queueing async notifications for new user {instance.id}")
+                handle_new_user_notifications_async.delay(instance.id)
+            except Exception as e:
+                # Don't block on notification failure - just log it
+                logger.warning(f"[SIGNAL] Failed to queue async notifications for user {instance.id}: {str(e)}")
+                logger.info(f"[SIGNAL] Notifications will be created when Celery worker is available")
+
+        elif not instance._state.adding and 'is_active' in update_fields:
+            # Account status changes - create notifications synchronously
+            status = "activated" if instance.is_active else "deactivated"
+            create_notification(
+                user=instance,
+                title=f"[ACCOUNT] Account {status.capitalize()}",
+                message=f"Your account is now {status}, {instance.get_full_name()}. {'' if instance.is_active else 'Need assistance? Contact support.'}",
+                notification_type=f"account_{status}",
+                importance="high"
+            )
     except Exception as e:
         logger.error(f"Error handling user creation: {str(e)}", exc_info=True)
 

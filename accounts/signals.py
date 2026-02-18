@@ -73,13 +73,6 @@ def create_user_wallet(instance, created, **_):
 
 
 @receiver(post_save, sender=CustomUser)
-def create_wallet_for_user(sender, instance, created, **kwargs):
-    if created and not hasattr(instance, 'wallet'):
-        wallet = Wallet.objects.create()
-        instance.wallet = wallet
-        instance.save()
-
-@receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
     """
     Create a profile for a new user if it doesn't exist.
