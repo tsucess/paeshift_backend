@@ -1,2 +1,5 @@
 python-3.12.0
+# IMPORTANT: This project requires Python 3.12.0
+# Django 4.2.16 does NOT support Python 3.14
+# See PYTHON_314_COMPATIBILITY_ANALYSIS.md for details
 

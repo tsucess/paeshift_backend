@@ -702,8 +702,9 @@ def verify_password_reset(request, payload: PasswordResetVerifySchema):
         status_code, response = verify_otp(request, verify_payload)
 
         if status_code != 200:
-            # Return the error from verify_otp
-            return status_code, response
+            # Return the error from verify_otp, converting message to error format
+            error_message = response.get('message', 'OTP verification failed')
+            return status_code, ErrorOut(error=error_message)
 
         # OTP is valid - set new password
         user.set_password(new_password)
@@ -1154,8 +1155,9 @@ def verify_sensitive_operation(request, payload: OTPVerifySchema):
         status_code, response = verify_otp(request, verify_payload)
 
         if status_code != 200:
-            # Return the error from verify_otp
-            return status_code, response
+            # Return the error from verify_otp, converting message to error format
+            error_message = response.get('message', 'OTP verification failed')
+            return status_code, ErrorOut(error=error_message)
 
         # OTP is valid - mark operation as verified
         operation_name = pending_operation.get('name', 'unknown')
@@ -1307,8 +1309,9 @@ def verify_login(request, payload: OTPVerifySchema):
         status_code, response = verify_otp(request, verify_payload)
 
         if status_code != 200:
-            # Return the error from verify_otp
-            return status_code, response
+            # Return the error from verify_otp, converting message to error format
+            error_message = response.get('message', 'OTP verification failed')
+            return status_code, ErrorOut(error=error_message)
 
         # OTP is valid - complete login
 
@@ -1453,9 +1456,10 @@ def verify_registration(request, payload: OTPVerifySchema):
         core_logger.info(f"[VERIFY_REG] verify_otp returned status: {status_code}, response: {response}")
 
         if status_code != 200:
-            # Return the error from verify_otp
+            # Return the error from verify_otp, converting message to error format
             core_logger.warning(f"[VERIFY_REG] OTP verification failed with status {status_code}")
-            return status_code, response
+            error_message = response.get('message', 'OTP verification failed')
+            return status_code, ErrorOut(error=error_message)
 
         # OTP is valid - activate the user
         core_logger.info(f"[VERIFY_REG] OTP verified successfully. Activating user {user.id} ({email})")

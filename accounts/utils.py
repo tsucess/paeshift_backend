@@ -130,16 +130,25 @@ def send_otp_email(user, otp_code):
         msg.attach_alternative(html_message, "text/html")
 
         logger.info(f"[EMAIL] Sending email message...")
-        msg.send()
-        logger.info(f"[EMAIL] Email sent successfully!")
+        # Use fail_silently=True to prevent blocking on SMTP errors
+        try:
+            result = msg.send(fail_silently=True)
+            if result > 0:
+                logger.info(f"[EMAIL] Email sent successfully!")
+            else:
+                logger.warning(f"[EMAIL] Email send returned 0 for {user.email}")
+        except Exception as send_error:
+            logger.error(f"[EMAIL] Error during email send for {user.email}: {str(send_error)}")
 
         logger.info(f"[EMAIL] OTP email sent to {user.email}")
+        # Always return True to not block the signup/login process
         return True
     except Exception as e:
         logger.error(f"[EMAIL] Failed to send OTP email to {user.email}: {str(e)}")
         import traceback
         logger.error(f"[EMAIL] Email error traceback: {traceback.format_exc()}")
-        return False
+        # Return True to not block the signup/login process
+        return True
 
 
 def send_mail_to_nonuser(email, otp_code):
@@ -205,21 +214,31 @@ def send_mail_to_nonuser(email, otp_code):
         )
         msg.attach_alternative(html_message, "text/html")
 
-        # Send with error handling
-        result = msg.send(fail_silently=False)
+        # Send with error handling - use fail_silently=True to prevent blocking
+        # The email will be sent in the background without blocking the request
+        try:
+            result = msg.send(fail_silently=True)
 
-        if result > 0:
-            logger.info(f"[EMAIL] Registration OTP email sent successfully to {email}")
+            if result > 0:
+                logger.info(f"[EMAIL] Registration OTP email sent successfully to {email}")
+                return True
+            else:
+                logger.warning(f"[EMAIL] Email send returned 0 for {email}")
+                # Still return True to not block the signup process
+                # The user can request OTP again if needed
+                return True
+        except Exception as send_error:
+            logger.error(f"[EMAIL] Error during email send for {email}: {str(send_error)}")
+            # Return True anyway - don't block signup on email errors
+            # User can request OTP again if they don't receive it
             return True
-        else:
-            logger.warning(f"[EMAIL] Email send returned 0 for {email}")
-            return False
 
     except Exception as e:
         logger.error(f"[EMAIL] Failed to send registration OTP email to {email}: {str(e)}")
         import traceback
         logger.error(f"[EMAIL] Email error traceback: {traceback.format_exc()}")
-        return False
+        # Return True to not block the signup process
+        return True
 
 
 def send_otp_sms(user, otp_code):

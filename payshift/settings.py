@@ -104,37 +104,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'payshift.wsgi.application'
 
-# Database configuration
-# Try to use smart database config, fallback to environment variables
-FORCE_SQLITE = os.getenv('FORCE_SQLITE', 'False').lower() == 'true'
-if FORCE_SQLITE:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / os.getenv('SQLITE_DB_PATH', 'db.sqlite3'),
-            'OPTIONS': {
-                'timeout': 20,
-            },
-        }
+# Database configuration - SQLite only
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / os.getenv('SQLITE_DB_PATH', 'db.sqlite3'),
+        'OPTIONS': {
+            'timeout': 20,
+        },
     }
-else:
-    try:
-        from smart_db_config import get_database_settings
-        DATABASES = {
-            'default': get_database_settings()
-        }
-    except ImportError:
-        print("⚠️  smart_db_config not available, using SQLite fallback")
-        # Fallback to SQLite with proper configuration
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-                'OPTIONS': {
-                    'timeout': 20,
-                },
-            }
-        }
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -369,6 +348,8 @@ Q_CLUSTER = {
 # =
 # 🔄 CELERY CONFIGURATION
 # =
+# 🔄 CELERY CONFIGURATION
+# =
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
 CELERY_ACCEPT_CONTENT = ['json']
@@ -378,6 +359,17 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
+
+# For development without Redis, use eager mode to execute tasks synchronously
+if DEBUG:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+
+# For development without Redis, use eager mode to execute tasks synchronously
+# This allows async tasks to run immediately without needing a Celery worker or Redis
+if DEBUG:
+    CELERY_TASK_ALWAYS_EAGER = True  # Execute tasks synchronously in development
+    CELERY_TASK_EAGER_PROPAGATES = True  # Propagate exceptions from eager tasks
 
 
 

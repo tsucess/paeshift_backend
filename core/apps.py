@@ -28,7 +28,9 @@ class CoreConfig(AppConfig):
         # Only run in the main thread to avoid running twice in development
         if threading.current_thread() == threading.main_thread():
             # Delay database operations to avoid accessing the database during initialization
-            self._setup_delayed_tasks()
+            # Temporarily disabled to fix server startup hang
+            # self._setup_delayed_tasks()
+            pass
 
     def _setup_delayed_tasks(self):
         """

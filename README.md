@@ -61,10 +61,12 @@ Payshift follows a microservice-oriented architecture:
 ## 🚦 Getting Started
 
 ### Prerequisites
-- Python 3.9+
+- **Python 3.12.0** (REQUIRED - see [PYTHON_VERSION_SETUP.md](PYTHON_VERSION_SETUP.md))
 - Node.js 14+
 - Redis
 - PostgreSQL (optional, can use SQLite for development)
+
+⚠️ **IMPORTANT**: This project requires Python 3.12.0. Django 4.2.16 does NOT support Python 3.14 or other versions. See [PYTHON_VERSION_SETUP.md](PYTHON_VERSION_SETUP.md) for detailed setup instructions.
 
 ### Backend Setup
 ```bash
