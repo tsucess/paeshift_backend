@@ -158,7 +158,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+# Default origins for development and production
+DEFAULT_CORS_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+    'http://172.18.64.1:3000',  # Docker container
+    'http://172.18.0.1:3000',   # Docker host gateway
+    'https://paeshift.energylitics.com',  # Production frontend
+    'https://api.energylitics.com',  # Production API domain
+]
+
+# Get CORS origins from environment or use defaults
+cors_origins_env = os.getenv('CORS_ALLOWED_ORIGINS', '')
+if cors_origins_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(',')]
+else:
+    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ORIGINS
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -171,9 +189,35 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # CSRF settings
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:8000').split(',')
+DEFAULT_CSRF_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8000',
+    'http://172.18.64.1:3000',  # Docker container
+    'http://172.18.0.1:3000',   # Docker host gateway
+    'https://paeshift.energylitics.com',  # Production frontend
+    'https://api.energylitics.com',  # Production API domain
+]
+
+csrf_origins_env = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins_env.split(',')]
+else:
+    CSRF_TRUSTED_ORIGINS = DEFAULT_CSRF_ORIGINS
+
 CSRF_USE_SESSIONS = True  # Store CSRF token in session instead of cookie for better security
 CSRF_COOKIE_SECURE = os.getenv('DJANGO_DEBUG', 'True').lower() == 'false'  # Secure in production
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token for AJAX requests

@@ -104,22 +104,40 @@ def fetch_all_users():
     users = []
     for user in User.objects.all():
         profile_pic_url = None
-        if hasattr(user, "profile"):
-            profile = user.profile
-            active_pic = profile.pictures.filter(is_active=True).first()
-            if active_pic:
-                profile_pic_url = active_pic.url
-        users.append({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "date_joined": user.date_joined,
-            "role": user.role,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "full_name": user.get_full_name(),
-            "profile_pic_url": profile_pic_url ,
-        })
+        try:
+            if hasattr(user, "profile") and user.profile:
+                profile = user.profile
+                # Safely access pictures relationship
+                if hasattr(profile, "pictures"):
+                    active_pic = profile.pictures.filter(is_active=True).first()
+                    if active_pic:
+                        profile_pic_url = active_pic.url
+        except Exception as e:
+            # Log the error but continue processing other users
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error fetching profile picture for user {user.id}: {str(e)}")
+            profile_pic_url = None
+
+        try:
+            users.append({
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "date_joined": user.date_joined,
+                "role": user.role,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": user.get_full_name(),
+                "profile_pic_url": profile_pic_url,
+            })
+        except Exception as e:
+            # Log the error but continue processing other users
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error processing user {user.id}: {str(e)}")
+            continue
+
     return users
 
 
@@ -155,28 +173,43 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
         ),
     }
 
-    applicants_count = job.applications.count() if hasattr(job, "applications") else 0
-    applicants_user_ids = (
-        list(job.applications.values_list("applicant_id", flat=True))
-        if hasattr(job, "applications")
-        else []
-    )
-
-    # Count accepted applicants
-    accepted_applicants_count = (
-        job.applications.filter(status=Application.Status.ACCEPTED).count()
-        if hasattr(job, "applications")
-        else 0
-    )
-
-    # Determine if the user has applied and get application status
+    applicants_count = 0
+    applicants_user_ids = []
+    accepted_applicants_count = 0
     has_applied = False
     application_status = None
-    if user_id is not None:
-        application = Application.objects.filter(job=job, applicant_id=user_id).exclude(status=Application.Status.WITHDRAWN).first()
-        if application:
-            has_applied = True
-            application_status = application.status
+
+    try:
+        if hasattr(job, "applications"):
+            applicants_count = job.applications.count()
+            applicants_user_ids = list(job.applications.values_list("applicant_id", flat=True))
+            accepted_applicants_count = job.applications.filter(status=Application.Status.ACCEPTED).count()
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Error fetching applications for job {job.id}: {str(e)}")
+
+    # Determine if the user has applied and get application status
+    try:
+        if user_id is not None:
+            application = Application.objects.filter(job=job, applicant_id=user_id).exclude(status=Application.Status.WITHDRAWN).first()
+            if application:
+                has_applied = True
+                application_status = application.status
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Error checking application status for user {user_id} on job {job.id}: {str(e)}")
+
+    # Get client rating safely
+    client_rating = None
+    if job.client and hasattr(job.client, "profile"):
+        try:
+            client_rating = job.client.profile.rating
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error fetching rating for user {job.client.id}: {str(e)}")
 
     data = {
         "id": job.id,
@@ -186,9 +219,7 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
         "industry_name": job.industry.name if job.industry else None,
         "subcategory": job.subcategory.name if job.subcategory else None,
         "client_username": job.client.username if job.client else None,
-        "client_rating": (
-            job.client.profile.rating if job.client and hasattr(job.client, "profile") else None
-        ),
+        "client_rating": client_rating,
         "client_first_name": job.client.first_name if job.client else None,
         "client_last_name": job.client.last_name if job.client else None,
         "client_profile_pic_url": None,
@@ -228,9 +259,16 @@ def serialize_job(job, include_extra: bool = True, user_id: int = None) -> dict:
     }
 
     if job.client and hasattr(job.client, "profile"):
-        profile = job.client.profile
-        active_pic = profile.pictures.filter(is_active=True).first()
-        data["client_profile_pic_url"] = active_pic.url if active_pic else None
+        try:
+            profile = job.client.profile
+            active_pic = profile.pictures.filter(is_active=True).first()
+            data["client_profile_pic_url"] = active_pic.url if active_pic else None
+        except Exception as e:
+            # Log the error but don't fail the entire request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error fetching profile picture for user {job.client.id}: {str(e)}")
+            data["client_profile_pic_url"] = None
 
     if include_extra:
         data.update(

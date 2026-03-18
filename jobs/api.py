@@ -137,12 +137,24 @@ def sort_jobs_recent_first(jobs):
 # 📌 Core Endpoints
 # ==
 
-@core_router.get("/all-users", tags=["Job"], response={200: dict})
+@core_router.get("/all-users", tags=["Job"], response={200: dict, 500: dict})
 def get_all_users_view(request):
-    # Use the correct fetch_all_users from jobs/utils.py, which includes profile_pic_url
-    from .utils import fetch_all_users
-    users = fetch_all_users()
-    return {"users": users}
+    """
+    Get all users in the system.
+
+    Returns a list of all users with their basic information and profile picture URL.
+    Handles errors gracefully to prevent 500 errors.
+    """
+    try:
+        # Use the correct fetch_all_users from jobs/utils.py, which includes profile_pic_url
+        from .utils import fetch_all_users
+        users = fetch_all_users()
+        return {"users": users}
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching all users: {str(e)}", exc_info=True)
+        return 500, {"error": f"Failed to fetch users: {str(e)}"}
 
 
 

@@ -201,40 +201,38 @@ class JobDetailSchema(HashableSchema):
     title: str
     description: str
     status: str
-    date: Optional[date]
-    start_time: Optional[time]
-    end_time: Optional[time]
-    duration: str
+    duration: Optional[str] = None
     rate: str
     location: str
-    latitude: Optional[float]
-    longitude: Optional[float]
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     is_shift_ongoing: Optional[bool] = None
-    employer_name: str
-    date_posted: Optional[datetime]
-    updated_at: Optional[datetime]
+    employer_name: Optional[str] = None
     applicants_needed: int
-    job_type: str
-    shift_type: str
-    payment_status: str
+    job_type: Optional[str] = None
+    shift_type: Optional[str] = None
+    payment_status: Optional[str] = None
     total_amount: str
     service_fee: str
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    industry_id: int
-    industry_name: str
+    industry_id: Optional[int] = None
+    industry_name: Optional[str] = None
+    subcategory: Optional[str] = None
 
-    subcategory: str
-    start_time_str: Optional[str]
-    end_time_str: Optional[str]
-    # Human-friendly display fields
-    date_posted: Optional[str] = None
-    date_human: Optional[str] = None
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
-    updated_at: Optional[str] = None
+    # Time fields
+    start_time_str: Optional[str] = None
+    end_time_str: Optional[str] = None
     start_time_human: Optional[str] = None
     end_time_human: Optional[str] = None
+
+    # Human-friendly display fields
+    date: Optional[str] = None
+    date_posted: Optional[str] = None
+    date_human: Optional[str] = None
+    updated_at: Optional[str] = None
+    date_posted_human: Optional[str] = None
+    updated_at_human: Optional[str] = None
 
     # Date flags
     is_today: bool = False
@@ -245,14 +243,22 @@ class JobDetailSchema(HashableSchema):
     applicants_count: int = 0
     accepted_applicants_count: int = 0
     applicants_user_ids: List[int] = []
-    updated_at_human: Optional[str] = None
-    # **Add these fields** if you want them in response:
+
+    # Client fields
     client_id: Optional[int] = None
     client_rating: Optional[float] = None
     client_profile_pic_url: Optional[str] = None
+    client_username: Optional[str] = None
+    client_first_name: Optional[str] = None
+    client_last_name: Optional[str] = None
+
     # Shift timing fields
     actual_shift_start: Optional[str] = None
     actual_shift_end: Optional[str] = None
+
+    # Application fields
+    has_applied: Optional[bool] = False
+    application_status: Optional[str] = None
 
 class CreateJobSchema(HashableSchema):
     user_id: int
