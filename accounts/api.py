@@ -1649,8 +1649,13 @@ def login_simple(request, payload: LoginSchema):
             "email": user.email
         }, status=200)
 
-    except AuthenticationError:
-        raise
+    except AuthenticationError as e:
+        return JsonResponse({
+            "success": False,
+            "error": e.message,
+            "error_code": e.error_code,
+            "details": e.details,
+        }, status=e.status_code)
     except Exception as e:
         core_logger.error(f"Simple login error: {str(e)}", exc_info=True)
         raise InternalServerError("Login failed. Please try again.")
@@ -1726,8 +1731,13 @@ def login_view(request, payload: LoginSchema):
             "email": user.email
         }, status=200)
 
-    except AuthenticationError:
-        raise
+    except AuthenticationError as e:
+        return JsonResponse({
+            "success": False,
+            "error": e.message,
+            "error_code": e.error_code,
+            "details": e.details,
+        }, status=e.status_code)
     except Exception as e:
         core_logger.error(f"Login error: {str(e)}", exc_info=True)
         raise InternalServerError("Login failed. Please try again.")

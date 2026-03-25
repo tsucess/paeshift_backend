@@ -1,10 +1,12 @@
 from django.urls import path
+from django.http import JsonResponse
 from ninja import NinjaAPI
 
 from .api import accounts_router
 from .social_api import social_router
 from .otp_api import otp_router
 from . import views
+from core.exceptions import PaeshiftException
 
 accounts_api = NinjaAPI(
     title="Accounts API",
@@ -14,6 +16,7 @@ accounts_api = NinjaAPI(
     # csrf=False,  # Not supported in this version of django-ninja
     auth=None,  # Make authentication optional - CONFIGURE IN PRODUCTION!
 )
+
 
 # Add the routers to the API
 accounts_api.add_router("/", accounts_router)
